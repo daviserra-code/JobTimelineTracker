@@ -16,6 +16,7 @@ import ImportExportDialog from "@/components/import-export-dialog";
 import ActivityForm from "@/components/activity-form";
 import { ActivityFilters } from "@/components/activity-filters";
 import type { ActivityFilters as ActivityFiltersType } from "@/components/activity-filters";
+import MobileNav from "@/components/mobile-nav";
 
 export default function Home() {
   const isMobile = useMobile();
@@ -112,110 +113,118 @@ export default function Home() {
   };
 
   return (
-    <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6 tour-home">
-      <div className="tour-calendar-controls">
-        <CalendarControls
-          currentYear={currentYear}
-          currentMonth={currentMonth}
-          currentWeek={currentWeek}
-          currentDay={currentDay}
-          currentViewMode={viewMode}
-          onYearChange={changeYear}
-          onMonthChange={changeMonth}
-          onWeekChange={changeWeek}
-          onDayChange={changeDay}
-          onViewModeChange={setViewMode}
-          onOpenAddActivity={() => setIsAddActivityOpen(true)}
-          onOpenImportExport={openImportExportDialog}
-        />
-      </div>
-      
-      <div className="mt-4 mb-6 tour-filters">
-        <ActivityFilters
-          onFilterChange={(filters) => {
-            console.log("Filters applied:", filters);
-            setActiveFilters(filters);
-          }}
-        />
-      </div>
-      
-      <div className="tour-legend">
-        <ActivityLegend />
-      </div>
-      
-      {viewMode === "timeline" && (
-        <div className="tour-timeline">
-          <TimelineView
+    <>
+      <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6 tour-home">
+        <div className="tour-calendar-controls">
+          <CalendarControls
+            currentYear={currentYear}
+            currentMonth={currentMonth}
+            currentWeek={currentWeek}
+            currentDay={currentDay}
+            currentViewMode={viewMode}
+            onYearChange={changeYear}
+            onMonthChange={changeMonth}
+            onWeekChange={changeWeek}
+            onDayChange={changeDay}
+            onViewModeChange={setViewMode}
+            onOpenAddActivity={() => setIsAddActivityOpen(true)}
+            onOpenImportExport={openImportExportDialog}
+          />
+        </div>
+        
+        <div className="mt-4 mb-6 tour-filters">
+          <ActivityFilters
+            onFilterChange={(filters) => {
+              console.log("Filters applied:", filters);
+              setActiveFilters(filters);
+            }}
+          />
+        </div>
+        
+        <div className="tour-legend">
+          <ActivityLegend />
+        </div>
+        
+        {viewMode === "timeline" && (
+          <div className="tour-timeline">
+            <TimelineView
+              activities={activitiesLoading ? [] : currentYearActivities}
+              holidays={holidaysLoading ? [] : holidays}
+              year={currentYear}
+              zoomLevel={zoomLevel}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onActivityClick={handleActivityClick}
+            />
+          </div>
+        )}
+        
+        {viewMode === "month" && (
+          <MonthView
             activities={activitiesLoading ? [] : currentYearActivities}
             holidays={holidaysLoading ? [] : holidays}
             year={currentYear}
-            zoomLevel={zoomLevel}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
+            month={currentMonth}
             onActivityClick={handleActivityClick}
           />
+        )}
+        
+        {viewMode === "week" && (
+          <WeekView
+            activities={activitiesLoading ? [] : currentYearActivities}
+            holidays={holidaysLoading ? [] : holidays}
+            year={currentYear}
+            month={currentMonth}
+            weekNumber={currentWeek}
+            onActivityClick={handleActivityClick}
+          />
+        )}
+        
+        {viewMode === "day" && (
+          <DayView
+            activities={activitiesLoading ? [] : currentYearActivities}
+            holidays={holidaysLoading ? [] : holidays}
+            year={currentYear}
+            month={currentMonth}
+            day={currentDay}
+            onActivityClick={handleActivityClick}
+          />
+        )}
+        
+        <div className="tour-notifications">
+          <NotificationsPanel />
         </div>
-      )}
-      
-      {viewMode === "month" && (
-        <MonthView
-          activities={activitiesLoading ? [] : currentYearActivities}
-          holidays={holidaysLoading ? [] : holidays}
-          year={currentYear}
-          month={currentMonth}
-          onActivityClick={handleActivityClick}
+        
+        <ImportExportDialog
+          open={isImportExportOpen}
+          onOpenChange={setIsImportExportOpen}
+          activities={activities}
         />
-      )}
-      
-      {viewMode === "week" && (
-        <WeekView
-          activities={activitiesLoading ? [] : currentYearActivities}
-          holidays={holidaysLoading ? [] : holidays}
-          year={currentYear}
-          month={currentMonth}
-          weekNumber={currentWeek}
-          onActivityClick={handleActivityClick}
-        />
-      )}
-      
-      {viewMode === "day" && (
-        <DayView
-          activities={activitiesLoading ? [] : currentYearActivities}
-          holidays={holidaysLoading ? [] : holidays}
-          year={currentYear}
-          month={currentMonth}
-          day={currentDay}
-          onActivityClick={handleActivityClick}
-        />
-      )}
-      
-      <div className="tour-notifications">
-        <NotificationsPanel />
-      </div>
-      
-      <ImportExportDialog
-        open={isImportExportOpen}
-        onOpenChange={setIsImportExportOpen}
-        activities={activities}
-      />
-      
-      <ActivityForm
-        open={isAddActivityOpen}
-        onOpenChange={setIsAddActivityOpen}
-        actionType="create"
-      />
-      
-      {selectedActivity && (
+        
         <ActivityForm
-          open={isEditActivityOpen}
-          onOpenChange={(open) => {
-            setIsEditActivityOpen(open);
-            if (!open) setSelectedActivity(null);
-          }}
-          initialData={selectedActivity}
-          actionType="edit"
+          open={isAddActivityOpen}
+          onOpenChange={setIsAddActivityOpen}
+          actionType="create"
         />
-      )}
-    </main>
+        
+        {selectedActivity && (
+          <ActivityForm
+            open={isEditActivityOpen}
+            onOpenChange={(open) => {
+              setIsEditActivityOpen(open);
+              if (!open) setSelectedActivity(null);
+            }}
+            initialData={selectedActivity}
+            actionType="edit"
+          />
+        )}
+      </main>
+      
+      {/* Mobile Navigation */}
+      <MobileNav 
+        currentViewMode={viewMode} 
+        onViewModeChange={setViewMode} 
+      />
+    </>
   );
 }
