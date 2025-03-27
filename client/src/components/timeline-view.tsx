@@ -141,21 +141,13 @@ export default function TimelineView({
   onZoomOut,
   onActivityClick
 }: TimelineViewProps) {
-  // Group activities by category for display
-  const projectActivities = activities.filter(a => a.title.toLowerCase().includes('project'));
-  const meetingActivities = activities.filter(a => a.title.toLowerCase().includes('meeting'));
+  // Group activities by type for display
+  const projectActivities = activities.filter(a => a.type === 'project');
+  const meetingActivities = activities.filter(a => a.type === 'meeting');
   const holidayActivities = activities.filter(a => a.type === 'holiday');
-  const trainingActivities = activities.filter(a => 
-    a.title.toLowerCase().includes('training') || 
-    a.title.toLowerCase().includes('conference')
-  );
-  const otherActivities = activities.filter(a => 
-    !a.title.toLowerCase().includes('project') && 
-    !a.title.toLowerCase().includes('meeting') && 
-    a.type !== 'holiday' &&
-    !a.title.toLowerCase().includes('training') &&
-    !a.title.toLowerCase().includes('conference')
-  );
+  const confirmedActivities = activities.filter(a => a.type === 'confirmed');
+  const tentativeActivities = activities.filter(a => a.type === 'tentative');
+  const hypotheticalActivities = activities.filter(a => a.type === 'hypothetical');
   
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
@@ -202,28 +194,37 @@ export default function TimelineView({
               />
             )}
             
+            {confirmedActivities.length > 0 && (
+              <TimelineActivityRow 
+                title="Confirmed Activities" 
+                activities={confirmedActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
+            )}
+            
+            {tentativeActivities.length > 0 && (
+              <TimelineActivityRow 
+                title="Tentative Activities" 
+                activities={tentativeActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
+            )}
+            
+            {hypotheticalActivities.length > 0 && (
+              <TimelineActivityRow 
+                title="Hypothetical Activities" 
+                activities={hypotheticalActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
+            )}
+            
             {holidayActivities.length > 0 && (
               <TimelineActivityRow 
                 title="Holidays" 
                 activities={holidayActivities} 
-                year={year}
-                onActivityClick={onActivityClick} 
-              />
-            )}
-            
-            {trainingActivities.length > 0 && (
-              <TimelineActivityRow 
-                title="Training & Conferences" 
-                activities={trainingActivities} 
-                year={year}
-                onActivityClick={onActivityClick} 
-              />
-            )}
-            
-            {otherActivities.length > 0 && (
-              <TimelineActivityRow 
-                title="Other Activities" 
-                activities={otherActivities} 
                 year={year}
                 onActivityClick={onActivityClick} 
               />

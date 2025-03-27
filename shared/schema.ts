@@ -69,7 +69,7 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Custom types for the application
-export type ActivityType = "confirmed" | "tentative" | "holiday" | "hypothetical";
+export type ActivityType = "confirmed" | "tentative" | "holiday" | "hypothetical" | "project" | "meeting";
 
 export type Region = "italy" | "europe" | "usa" | "asia";
 

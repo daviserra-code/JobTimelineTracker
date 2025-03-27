@@ -5,6 +5,8 @@ export const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string
   tentative: { label: "Tentative", color: "bg-[#03a9f4]" },
   holiday: { label: "Holiday", color: "bg-[#f44336]" },
   hypothetical: { label: "Hypothetical", color: "bg-[#ffeb3b]" },
+  project: { label: "Project", color: "bg-[#4caf50]" },
+  meeting: { label: "Meeting", color: "bg-[#9c27b0]" },
 };
 
 export const VIEW_MODES: Record<ViewMode, string> = {

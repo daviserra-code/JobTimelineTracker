@@ -21,7 +21,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required" }),
   endDate: z.date({ required_error: "End date is required" }),
-  type: z.enum(["confirmed", "tentative", "holiday", "hypothetical"] as const),
+  type: z.enum(["confirmed", "tentative", "holiday", "hypothetical", "project", "meeting"] as const),
   userId: z.number().optional(),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date must be after start date",
