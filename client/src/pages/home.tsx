@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ViewMode } from "@shared/schema";
+import { ViewMode, Activity, InsertActivity } from "@shared/schema";
 import { useMobile } from "@/hooks/use-mobile";
 import { useActivities } from "@/hooks/use-activities";
 import { useHolidays } from "@/hooks/use-holidays";
@@ -21,6 +21,8 @@ export default function Home() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
   
   // Get activities and holidays data
   const { activities, isLoading: activitiesLoading } = useActivities();
@@ -73,6 +75,14 @@ export default function Home() {
   const openImportExportDialog = () => {
     setIsImportExportOpen(true);
   };
+  
+  const handleActivityClick = (activity: Activity) => {
+    // Skip handling for holiday activities which are not editable
+    if (activity.type === "holiday") return;
+    
+    setSelectedActivity(activity);
+    setIsEditActivityOpen(true);
+  };
 
   return (
     <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6">
@@ -95,6 +105,7 @@ export default function Home() {
           zoomLevel={zoomLevel}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
+          onActivityClick={handleActivityClick}
         />
       )}
       
@@ -111,6 +122,18 @@ export default function Home() {
         onOpenChange={setIsAddActivityOpen}
         actionType="create"
       />
+      
+      {selectedActivity && (
+        <ActivityForm
+          open={isEditActivityOpen}
+          onOpenChange={(open) => {
+            setIsEditActivityOpen(open);
+            if (!open) setSelectedActivity(null);
+          }}
+          initialData={selectedActivity}
+          actionType="edit"
+        />
+      )}
     </main>
   );
 }

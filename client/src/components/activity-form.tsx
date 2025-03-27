@@ -46,15 +46,19 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       startDate: initialData?.startDate ? new Date(initialData.startDate) : new Date(),
       endDate: initialData?.endDate ? new Date(initialData.endDate) : new Date(),
       type: (initialData?.type as ActivityType) || "confirmed",
-      userId: initialData?.userId || undefined,
+      userId: initialData?.userId || 1, // Default to user ID 1 if not provided
     },
   });
   
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (actionType === "create") {
       createActivity(values);
-    } else if (actionType === "edit" && initialData && initialData.id) {
-      updateActivity({ id: initialData.id, activity: values });
+    } else if (actionType === "edit" && initialData) {
+      // For editing, we need to get the ID from the initialData which might be cast as Activity
+      const activityId = (initialData as any).id;
+      if (activityId) {
+        updateActivity({ id: activityId, activity: values });
+      }
     }
     onOpenChange(false);
   }

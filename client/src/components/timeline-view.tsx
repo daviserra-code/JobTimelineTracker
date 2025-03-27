@@ -24,9 +24,10 @@ interface TimelineActivityRowProps {
   title: string;
   activities: Activity[];
   year: number;
+  onActivityClick?: (activity: Activity) => void;
 }
 
-function TimelineActivityRow({ title, activities, year }: TimelineActivityRowProps) {
+function TimelineActivityRow({ title, activities, year, onActivityClick }: TimelineActivityRowProps) {
   const periodStart = new Date(year, 0, 1);
   const periodEnd = new Date(year, 11, 31);
   
@@ -96,6 +97,7 @@ function TimelineActivityRow({ title, activities, year }: TimelineActivityRowPro
               style={{ left: `${left}%`, width: `${width}%` }}
               onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
               onMouseLeave={handleActivityMouseLeave}
+              onClick={() => onActivityClick && onActivityClick(activity)}
             >
               <span className="truncate">{activity.title}</span>
             </div>
@@ -127,6 +129,7 @@ interface TimelineViewProps {
   zoomLevel: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onActivityClick?: (activity: Activity) => void;
 }
 
 export default function TimelineView({ 
@@ -135,7 +138,8 @@ export default function TimelineView({
   year,
   zoomLevel,
   onZoomIn,
-  onZoomOut
+  onZoomOut,
+  onActivityClick
 }: TimelineViewProps) {
   // Group activities by category for display
   const projectActivities = activities.filter(a => a.title.toLowerCase().includes('project'));
@@ -181,23 +185,48 @@ export default function TimelineView({
           
           <div className="relative min-h-[400px]">
             {projectActivities.length > 0 && (
-              <TimelineActivityRow title="Projects" activities={projectActivities} year={year} />
+              <TimelineActivityRow 
+                title="Projects" 
+                activities={projectActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
             )}
             
             {meetingActivities.length > 0 && (
-              <TimelineActivityRow title="Meetings" activities={meetingActivities} year={year} />
+              <TimelineActivityRow 
+                title="Meetings" 
+                activities={meetingActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
             )}
             
             {holidayActivities.length > 0 && (
-              <TimelineActivityRow title="Holidays" activities={holidayActivities} year={year} />
+              <TimelineActivityRow 
+                title="Holidays" 
+                activities={holidayActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
             )}
             
             {trainingActivities.length > 0 && (
-              <TimelineActivityRow title="Training & Conferences" activities={trainingActivities} year={year} />
+              <TimelineActivityRow 
+                title="Training & Conferences" 
+                activities={trainingActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
             )}
             
             {otherActivities.length > 0 && (
-              <TimelineActivityRow title="Other Activities" activities={otherActivities} year={year} />
+              <TimelineActivityRow 
+                title="Other Activities" 
+                activities={otherActivities} 
+                year={year}
+                onActivityClick={onActivityClick} 
+              />
             )}
             
             {/* If there are no activities, show empty state */}
