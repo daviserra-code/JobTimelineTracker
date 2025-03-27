@@ -1,12 +1,16 @@
-import { ActivityType, Region, ViewMode } from "@shared/schema";
+import { ActivityType, ActivityStatus, Region, ViewMode } from "@shared/schema";
 
 export const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
-  confirmed: { label: "Confirmed", color: "bg-[#e91e63]" },
-  tentative: { label: "Tentative", color: "bg-[#03a9f4]" },
-  holiday: { label: "Holiday", color: "bg-[#f44336]" },
-  hypothetical: { label: "Hypothetical", color: "bg-[#ffeb3b]" },
   project: { label: "Project", color: "bg-[#4caf50]" },
   meeting: { label: "Meeting", color: "bg-[#9c27b0]" },
+  training: { label: "Training", color: "bg-[#ff9800]" },
+  holiday: { label: "Holiday", color: "bg-[#f44336]" },
+};
+
+export const ACTIVITY_STATUSES: Record<ActivityStatus, { label: string; color: string }> = {
+  confirmed: { label: "Confirmed", color: "bg-[#e91e63]" },
+  tentative: { label: "Tentative", color: "bg-[#03a9f4]" },
+  hypothetical: { label: "Hypothetical", color: "bg-[#ffeb3b]" },
 };
 
 export const VIEW_MODES: Record<ViewMode, string> = {

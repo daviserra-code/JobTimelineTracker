@@ -1,25 +1,30 @@
-import { Activity, ActivityType } from './types';
+import { Activity, ActivityType, ActivityStatus } from '@shared/schema';
 import { apiRequest } from './queryClient';
+import { ACTIVITY_TYPES, ACTIVITY_STATUSES } from './constants';
 
-// Get activity type color based on the activity type
+// Get activity type color
 export const getActivityTypeColor = (type: ActivityType): string => {
-  switch (type) {
-    case 'confirmed':
-      return 'bg-[#e91e63]'; // Pink
-    case 'tentative':
-      return 'bg-[#03a9f4]'; // Light Blue
-    case 'holiday':
-      return 'bg-[#f44336]'; // Red
-    case 'hypothetical':
-      return 'bg-[#ffeb3b]'; // Yellow
-    default:
-      return 'bg-gray-400';
-  }
+  return ACTIVITY_TYPES[type]?.color || 'bg-gray-400';
 };
 
-// Get text color based on the activity type
-export const getActivityTextColor = (type: ActivityType): string => {
-  switch (type) {
+// Get activity type label
+export const getActivityTypeLabel = (type: ActivityType): string => {
+  return ACTIVITY_TYPES[type]?.label || 'Unknown';
+};
+
+// Get activity status color
+export const getActivityStatusColor = (status: ActivityStatus): string => {
+  return ACTIVITY_STATUSES[status]?.color || 'bg-gray-400';
+};
+
+// Get activity status label
+export const getActivityStatusLabel = (status: ActivityStatus): string => {
+  return ACTIVITY_STATUSES[status]?.label || 'Unknown';
+};
+
+// Get text color based on the status
+export const getActivityTextColor = (status: ActivityStatus): string => {
+  switch (status) {
     case 'hypothetical':
       return 'text-black'; // Black text for yellow background
     default:
@@ -27,54 +32,35 @@ export const getActivityTextColor = (type: ActivityType): string => {
   }
 };
 
-// Get activity type label
-export const getActivityTypeLabel = (type: ActivityType): string => {
-  switch (type) {
-    case 'confirmed':
-      return 'Confirmed';
-    case 'tentative':
-      return 'Tentative';
-    case 'holiday':
-      return 'Holiday';
-    case 'hypothetical':
-      return 'Hypothetical';
-    default:
-      return 'Unknown';
-  }
-};
-
 // Generate a tooltip text for an activity
 export const generateTooltipText = (activity: Activity): string => {
-  const type = getActivityTypeLabel(activity.type);
+  const type = getActivityTypeLabel(activity.type as ActivityType);
+  const status = activity.status ? getActivityStatusLabel(activity.status as ActivityStatus) : '';
   const dates = new Date(activity.startDate).toLocaleDateString() + 
     (activity.endDate !== activity.startDate ? 
       ` - ${new Date(activity.endDate).toLocaleDateString()}` : '');
   
-  let tooltipText = `${activity.title} (${type}) - ${dates}`;
+  let tooltipText = `${activity.title} (${type}${status ? ', ' + status : ''}) - ${dates}`;
   
   if (activity.description) {
     tooltipText += `\n${activity.description}`;
   }
   
-  if (activity.location) {
-    tooltipText += `\nLocation: ${activity.location}`;
-  }
-  
   return tooltipText;
 };
 
-// Group activities by category
-export const groupActivitiesByCategory = (activities: Activity[]): Record<string, Activity[]> => {
+// Group activities by type
+export const groupActivitiesByType = (activities: Activity[]): Record<string, Activity[]> => {
   const grouped: Record<string, Activity[]> = {};
   
   activities.forEach(activity => {
-    const category = activity.category || 'Uncategorized';
+    const type = activity.type || 'Other';
     
-    if (!grouped[category]) {
-      grouped[category] = [];
+    if (!grouped[type]) {
+      grouped[type] = [];
     }
     
-    grouped[category].push(activity);
+    grouped[type].push(activity);
   });
   
   return grouped;

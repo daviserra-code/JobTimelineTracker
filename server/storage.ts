@@ -68,7 +68,8 @@ export class MemStorage implements IStorage {
         description: "Initial phase of Project Alpha",
         startDate: new Date(2025, 0, 10),
         endDate: new Date(2025, 1, 25),
-        type: "confirmed",
+        type: "project",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -76,7 +77,8 @@ export class MemStorage implements IStorage {
         description: "Second phase of Project Alpha",
         startDate: new Date(2025, 2, 15),
         endDate: new Date(2025, 4, 20),
-        type: "tentative",
+        type: "project",
+        status: "tentative",
         userId: user.id,
       },
       {
@@ -84,7 +86,8 @@ export class MemStorage implements IStorage {
         description: "Final phase of Project Alpha",
         startDate: new Date(2025, 6, 10),
         endDate: new Date(2025, 9, 15),
-        type: "hypothetical",
+        type: "project",
+        status: "hypothetical",
         userId: user.id,
       },
       {
@@ -92,7 +95,8 @@ export class MemStorage implements IStorage {
         description: "Initial client kickoff meeting",
         startDate: new Date(2025, 0, 15),
         endDate: new Date(2025, 0, 15),
-        type: "confirmed",
+        type: "meeting",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -100,7 +104,8 @@ export class MemStorage implements IStorage {
         description: "Client review meeting",
         startDate: new Date(2025, 2, 25),
         endDate: new Date(2025, 2, 25),
-        type: "confirmed",
+        type: "meeting",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -108,7 +113,8 @@ export class MemStorage implements IStorage {
         description: "Client planning session",
         startDate: new Date(2025, 5, 5),
         endDate: new Date(2025, 5, 5),
-        type: "tentative",
+        type: "meeting",
+        status: "tentative",
         userId: user.id,
       },
       {
@@ -117,6 +123,7 @@ export class MemStorage implements IStorage {
         startDate: new Date(2025, 0, 1),
         endDate: new Date(2025, 0, 1),
         type: "holiday",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -125,6 +132,7 @@ export class MemStorage implements IStorage {
         startDate: new Date(2025, 3, 20),
         endDate: new Date(2025, 3, 20),
         type: "holiday",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -133,6 +141,7 @@ export class MemStorage implements IStorage {
         startDate: new Date(2025, 7, 1),
         endDate: new Date(2025, 7, 15),
         type: "holiday",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -140,7 +149,8 @@ export class MemStorage implements IStorage {
         description: "Annual technology conference",
         startDate: new Date(2025, 2, 10),
         endDate: new Date(2025, 2, 15),
-        type: "tentative",
+        type: "training",
+        status: "tentative",
         userId: user.id,
       },
       {
@@ -148,7 +158,8 @@ export class MemStorage implements IStorage {
         description: "Leadership skills development",
         startDate: new Date(2025, 5, 25),
         endDate: new Date(2025, 5, 30),
-        type: "confirmed",
+        type: "training",
+        status: "confirmed",
         userId: user.id,
       },
       {
@@ -156,7 +167,8 @@ export class MemStorage implements IStorage {
         description: "Annual industry summit",
         startDate: new Date(2025, 8, 15),
         endDate: new Date(2025, 8, 20),
-        type: "hypothetical",
+        type: "training",
+        status: "hypothetical",
         userId: user.id,
       },
       {
@@ -164,7 +176,8 @@ export class MemStorage implements IStorage {
         description: "Product beta testing phase",
         startDate: new Date(2025, 4, 10),
         endDate: new Date(2025, 4, 30),
-        type: "tentative",
+        type: "project",
+        status: "tentative",
         userId: user.id,
       },
       {
@@ -172,7 +185,8 @@ export class MemStorage implements IStorage {
         description: "Marketing campaign kickoff",
         startDate: new Date(2025, 6, 1),
         endDate: new Date(2025, 6, 20),
-        type: "hypothetical",
+        type: "project",
+        status: "hypothetical",
         userId: user.id,
       },
       {
@@ -180,7 +194,8 @@ export class MemStorage implements IStorage {
         description: "Official product launch event",
         startDate: new Date(2025, 7, 15),
         endDate: new Date(2025, 7, 15),
-        type: "confirmed",
+        type: "meeting",
+        status: "confirmed",
         userId: user.id,
       },
     ];
@@ -242,6 +257,7 @@ export class MemStorage implements IStorage {
       startDate: insertActivity.startDate,
       endDate: insertActivity.endDate,
       type: insertActivity.type,
+      status: insertActivity.status || "confirmed",
       userId: insertActivity.userId || null
     };
     this.activitiesMap.set(id, activity);

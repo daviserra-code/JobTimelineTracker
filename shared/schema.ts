@@ -19,7 +19,8 @@ export const activities = pgTable("activities", {
   description: text("description"),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
-  type: text("type").notNull(), // confirmed, tentative, holiday, hypothetical
+  type: text("type").notNull(), // project, meeting, training, holiday
+  status: text("status").notNull().default("confirmed"), // confirmed, tentative, hypothetical
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
 });
 
@@ -69,7 +70,8 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Custom types for the application
-export type ActivityType = "confirmed" | "tentative" | "holiday" | "hypothetical" | "project" | "meeting";
+export type ActivityType = "project" | "meeting" | "training" | "holiday";
+export type ActivityStatus = "confirmed" | "tentative" | "hypothetical";
 
 export type Region = "italy" | "europe" | "usa" | "asia";
 

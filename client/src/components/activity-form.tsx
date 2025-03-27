@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { ACTIVITY_TYPES } from "@/lib/constants";
-import { InsertActivity, ActivityType } from "@shared/schema";
+import { ACTIVITY_TYPES, ACTIVITY_STATUSES } from "@/lib/constants";
+import { InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
 import { useActivities } from "@/hooks/use-activities";
 
 // Extend the activity schema with form validation
@@ -21,7 +21,8 @@ const formSchema = z.object({
   description: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required" }),
   endDate: z.date({ required_error: "End date is required" }),
-  type: z.enum(["confirmed", "tentative", "holiday", "hypothetical", "project", "meeting"] as const),
+  type: z.enum(["project", "meeting", "training", "holiday"] as const),
+  status: z.enum(["confirmed", "tentative", "hypothetical"] as const),
   userId: z.number().optional(),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date must be after start date",
@@ -45,7 +46,8 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       description: initialData?.description || "",
       startDate: initialData?.startDate ? new Date(initialData.startDate) : new Date(),
       endDate: initialData?.endDate ? new Date(initialData.endDate) : new Date(),
-      type: (initialData?.type as ActivityType) || "confirmed",
+      type: (initialData?.type as ActivityType) || "meeting",
+      status: (initialData?.status as ActivityStatus) || "confirmed",
       userId: initialData?.userId || 1, // Default to user ID 1 if not provided
     },
   });
@@ -172,33 +174,63 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
               />
             </div>
             
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Activity Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select activity type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(ACTIVITY_TYPES).map(([type, { label, color }]) => (
-                        <SelectItem key={type} value={type} className="flex items-center">
-                          <div className="flex items-center">
-                            <div className={`w-3 h-3 rounded-full ${color} mr-2`}></div>
-                            <span>{label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Activity Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select activity type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(ACTIVITY_TYPES).map(([type, { label, color }]) => (
+                          <SelectItem key={type} value={type} className="flex items-center">
+                            <div className="flex items-center">
+                              <div className={`w-3 h-3 rounded-full ${color} mr-2`}></div>
+                              <span>{label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Activity Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select activity status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(ACTIVITY_STATUSES).map(([status, { label, color }]) => (
+                          <SelectItem key={status} value={status} className="flex items-center">
+                            <div className="flex items-center">
+                              <div className={`w-3 h-3 rounded-full ${color} mr-2`}></div>
+                              <span>{label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
