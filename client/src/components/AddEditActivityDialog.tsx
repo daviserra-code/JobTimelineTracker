@@ -1,11 +1,10 @@
-import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Activity, ActivityType } from '@/lib/types';
+import { Activity, ActivityType, ActivityStatus } from '@shared/schema';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
+import { ACTIVITY_TYPES, ACTIVITY_STATUSES, REGIONS } from '@/lib/constants';
 
 interface AddEditActivityDialogProps {
   isOpen: boolean;
@@ -21,19 +21,32 @@ interface AddEditActivityDialogProps {
   activity?: Activity;
 }
 
-// Form schema
+// Form schema for improved type safety
 const activitySchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
-  type: z.enum(['confirmed', 'tentative', 'holiday', 'hypothetical']),
+  type: z.enum(['project', 'meeting', 'training', 'holiday'] as const),
+  status: z.enum(['confirmed', 'tentative', 'hypothetical'] as const),
   category: z.string().optional(),
   location: z.string().optional(),
   notificationEnabled: z.boolean().default(false),
   notificationDate: z.string().optional(),
   region: z.string().optional()
-});
+}).refine(
+  (data) => {
+    // If notifications are enabled, make sure there's a date
+    if (data.notificationEnabled && !data.notificationDate) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Notification date is required when notifications are enabled",
+    path: ["notificationDate"]
+  }
+);
 
 type FormValues = z.infer<typeof activitySchema>;
 
@@ -50,15 +63,14 @@ const AddEditActivityDialog = ({
   const defaultValues: FormValues = {
     title: activity?.title || '',
     description: activity?.description || '',
-    startDate: activity?.startDate ? new Date(activity.startDate).toISOString().split('T')[0] : '',
-    endDate: activity?.endDate ? new Date(activity.endDate).toISOString().split('T')[0] : '',
-    type: activity?.type || 'confirmed',
+    startDate: activity?.startDate ? format(new Date(activity.startDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+    endDate: activity?.endDate ? format(new Date(activity.endDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+    type: (activity?.type as ActivityType) || 'meeting',
+    status: (activity?.status as ActivityStatus) || 'confirmed',
     category: activity?.category || '',
     location: activity?.location || '',
-    notificationEnabled: activity?.notificationEnabled || false,
-    notificationDate: activity?.notificationDate 
-      ? new Date(activity.notificationDate).toISOString().split('T')[0] 
-      : '',
+    notificationEnabled: false,
+    notificationDate: '',
     region: activity?.region || ''
   };
   
@@ -233,10 +245,45 @@ const AddEditActivityDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="tentative">Tentative</SelectItem>
-                      <SelectItem value="holiday">Holiday</SelectItem>
-                      <SelectItem value="hypothetical">Hypothetical</SelectItem>
+                      {Object.entries(ACTIVITY_TYPES).map(([type, { label, color }]) => (
+                        <SelectItem key={type} value={type} className="flex items-center">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full ${color} mr-2`}></div>
+                            <span>{label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Activity Status*</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select activity status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(ACTIVITY_STATUSES).map(([status, { label, color }]) => (
+                        <SelectItem key={status} value={status} className="flex items-center">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full ${color} mr-2`}></div>
+                            <span>{label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -322,10 +369,11 @@ const AddEditActivityDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Italy">Italy</SelectItem>
-                      <SelectItem value="Europe">Europe</SelectItem>
-                      <SelectItem value="USA">USA</SelectItem>
-                      <SelectItem value="Asia">Asia</SelectItem>
+                      {Object.entries(REGIONS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
