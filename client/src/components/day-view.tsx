@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { format, startOfDay, endOfDay, eachHourOfInterval } from "date-fns";
 import { Activity, Holiday } from "@shared/schema";
 import { ACTIVITY_TYPES } from "@/lib/constants";
@@ -21,19 +21,17 @@ export default function DayView({
   day,
   onActivityClick 
 }: DayViewProps) {
-  // Set up day boundaries
-  const dayDate = new Date(year, month, day);
-  const dayStart = startOfDay(dayDate);
-  const dayEnd = endOfDay(dayDate);
-  
-  // Generate hours for the day
-  const hours = eachHourOfInterval({ start: dayStart, end: dayEnd });
-  
-  // Filter activities that overlap with the day
-  const [visibleActivities, setVisibleActivities] = useState<Activity[]>([]);
-  
-  useEffect(() => {
-    const filtered = activities.filter(activity => {
+  // Using useMemo to avoid recreation on every render
+  const { dayDate, dayStart, dayEnd, hours, visibleActivities, isHoliday, holidayInfo } = useMemo(() => {
+    const dayDate = new Date(year, month, day);
+    const dayStart = startOfDay(dayDate);
+    const dayEnd = endOfDay(dayDate);
+    
+    // Generate hours for the day
+    const hours = eachHourOfInterval({ start: dayStart, end: dayEnd });
+    
+    // Filter activities that overlap with the day
+    const visibleActivities = activities.filter(activity => {
       const activityStart = new Date(activity.startDate);
       const activityEnd = new Date(activity.endDate);
       
@@ -42,8 +40,23 @@ export default function DayView({
       );
     });
     
-    setVisibleActivities(filtered);
-  }, [activities, dayStart, dayEnd]);
+    // Check if the current day is a holiday
+    const isHoliday = holidays.some(holiday => {
+      const holidayDate = new Date(holiday.date);
+      return holidayDate.getFullYear() === year &&
+             holidayDate.getMonth() === month &&
+             holidayDate.getDate() === day;
+    });
+    
+    const holidayInfo = holidays.find(holiday => {
+      const holidayDate = new Date(holiday.date);
+      return holidayDate.getFullYear() === year &&
+             holidayDate.getMonth() === month &&
+             holidayDate.getDate() === day;
+    });
+    
+    return { dayDate, dayStart, dayEnd, hours, visibleActivities, isHoliday, holidayInfo };
+  }, [year, month, day, activities, holidays]);
   
   const [tooltipContent, setTooltipContent] = useState("");
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -71,28 +84,36 @@ export default function DayView({
     setIsTooltipVisible(false);
   };
   
-  // Group activities by activity type
-  const projectActivities = visibleActivities.filter(a => a.type === 'project');
-  const meetingActivities = visibleActivities.filter(a => a.type === 'meeting');
-  const confirmedActivities = visibleActivities.filter(a => a.type === 'confirmed');
-  const tentativeActivities = visibleActivities.filter(a => a.type === 'tentative');
-  const hypotheticalActivities = visibleActivities.filter(a => a.type === 'hypothetical');
-  const holidayActivities = visibleActivities.filter(a => a.type === 'holiday');
+  // Group activities by activity type and status
+  const projectActivities = useMemo(() => 
+    visibleActivities.filter((a: Activity) => a.type === 'project'),
+    [visibleActivities]
+  );
   
-  // Check if the current day is a holiday
-  const isHoliday = holidays.some(holiday => {
-    const holidayDate = new Date(holiday.date);
-    return holidayDate.getFullYear() === year &&
-           holidayDate.getMonth() === month &&
-           holidayDate.getDate() === day;
-  });
+  const meetingActivities = useMemo(() => 
+    visibleActivities.filter((a: Activity) => a.type === 'meeting'),
+    [visibleActivities]
+  );
   
-  const holidayInfo = holidays.find(holiday => {
-    const holidayDate = new Date(holiday.date);
-    return holidayDate.getFullYear() === year &&
-           holidayDate.getMonth() === month &&
-           holidayDate.getDate() === day;
-  });
+  const confirmedActivities = useMemo(() => 
+    visibleActivities.filter((a: Activity) => a.status === 'confirmed'),
+    [visibleActivities]
+  );
+  
+  const tentativeActivities = useMemo(() => 
+    visibleActivities.filter((a: Activity) => a.status === 'tentative'),
+    [visibleActivities]
+  );
+  
+  const hypotheticalActivities = useMemo(() => 
+    visibleActivities.filter((a: Activity) => a.status === 'hypothetical'),
+    [visibleActivities]
+  );
+  
+  const holidayActivities = useMemo(() => 
+    visibleActivities.filter((a: Activity) => a.type === 'holiday'),
+    [visibleActivities]
+  );
   
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
@@ -117,9 +138,9 @@ export default function DayView({
           
           {/* Hour rows */}
           <div className="hours-container">
-            {hours.map((hour, index) => {
+            {hours.map((hour: Date, index: number) => {
               // Find activities that overlap with this hour
-              const hourActivities = visibleActivities.filter(activity => {
+              const hourActivities = visibleActivities.filter((activity: Activity) => {
                 const activityStart = new Date(activity.startDate);
                 const activityEnd = new Date(activity.endDate);
                 
@@ -140,7 +161,7 @@ export default function DayView({
                   </div>
                   
                   <div className="flex-1 relative min-h-[30px] pl-2">
-                    {hourActivities.map((activity, activityIndex) => {
+                    {hourActivities.map((activity: Activity, activityIndex: number) => {
                       const type = activity.type as keyof typeof ACTIVITY_TYPES;
                       const { color } = ACTIVITY_TYPES[type];
                       const textColor = getContrastTextColor(color);
