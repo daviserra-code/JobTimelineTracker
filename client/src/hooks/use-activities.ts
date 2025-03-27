@@ -1,0 +1,120 @@
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { Activity, InsertActivity } from "@shared/schema";
+
+export function useActivities() {
+  const { toast } = useToast();
+  
+  // Get all activities
+  const { data: activities, isLoading, error } = useQuery<Activity[]>({
+    queryKey: ['/api/activities'],
+  });
+  
+  // Create a new activity
+  const createMutation = useMutation({
+    mutationFn: async (activity: InsertActivity) => {
+      const response = await apiRequest("POST", "/api/activities", activity);
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      toast({
+        title: "Success",
+        description: "Activity created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create activity: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Update an activity
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, activity }: { id: number, activity: Partial<Activity> }) => {
+      const response = await apiRequest("PATCH", `/api/activities/${id}`, activity);
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      toast({
+        title: "Success",
+        description: "Activity updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update activity: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Delete an activity
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/activities/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      toast({
+        title: "Success",
+        description: "Activity deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete activity: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Import activities (from JSON)
+  const importMutation = useMutation({
+    mutationFn: async (importData: InsertActivity[]) => {
+      const response = await apiRequest("POST", "/api/activities/import", { activities: importData });
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      toast({
+        title: "Success",
+        description: "Activities imported successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to import activities: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  return {
+    activities: activities || [],
+    isLoading,
+    error,
+    createActivity: createMutation.mutate,
+    updateActivity: updateMutation.mutate,
+    deleteActivity: deleteMutation.mutate,
+    importActivities: importMutation.mutate,
+    isPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || importMutation.isPending
+  };
+}

@@ -1,0 +1,191 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { getHolidaysForYear } from "./holiday-api";
+import { z } from "zod";
+import { insertActivitySchema, insertNotificationSchema } from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // API routes prefix: /api
+  
+  // Activities Routes
+  
+  // Get all activities
+  app.get("/api/activities", async (req, res) => {
+    try {
+      const activities = await storage.getAllActivities();
+      res.json(activities);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching activities: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Get activity by ID
+  app.get("/api/activities/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const activity = await storage.getActivity(id);
+      
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+      
+      res.json(activity);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Create a new activity
+  app.post("/api/activities", async (req, res) => {
+    try {
+      const validatedData = insertActivitySchema.parse(req.body);
+      const createdActivity = await storage.createActivity(validatedData);
+      
+      // Create a notification for this activity (5 days before start date)
+      const startDate = new Date(validatedData.startDate);
+      const notifyDate = new Date(startDate);
+      notifyDate.setDate(startDate.getDate() - 5);
+      
+      await storage.createNotification({
+        activityId: createdActivity.id,
+        notifyDate,
+        read: false,
+        userId: validatedData.userId,
+      });
+      
+      res.status(201).json(createdActivity);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid activity data", errors: error.errors });
+      }
+      
+      res.status(500).json({ message: `Error creating activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Update an activity
+  app.patch("/api/activities/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const activity = await storage.getActivity(id);
+      
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+      
+      const updatedActivity = await storage.updateActivity(id, req.body);
+      res.json(updatedActivity);
+    } catch (error) {
+      res.status(500).json({ message: `Error updating activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Delete an activity
+  app.delete("/api/activities/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const activity = await storage.getActivity(id);
+      
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+      
+      await storage.deleteActivity(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: `Error deleting activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Import activities
+  app.post("/api/activities/import", async (req, res) => {
+    try {
+      const { activities } = req.body;
+      
+      if (!Array.isArray(activities)) {
+        return res.status(400).json({ message: "Invalid import data format, expected activities array" });
+      }
+      
+      const importedActivities = [];
+      
+      for (const activity of activities) {
+        try {
+          const validatedData = insertActivitySchema.parse(activity);
+          const createdActivity = await storage.createActivity(validatedData);
+          
+          // Create a notification for this activity (5 days before start date)
+          const startDate = new Date(validatedData.startDate);
+          const notifyDate = new Date(startDate);
+          notifyDate.setDate(startDate.getDate() - 5);
+          
+          await storage.createNotification({
+            activityId: createdActivity.id,
+            notifyDate,
+            read: false,
+            userId: validatedData.userId,
+          });
+          
+          importedActivities.push(createdActivity);
+        } catch (error) {
+          console.error("Error importing activity:", error);
+          // Continue with next activity on error
+        }
+      }
+      
+      res.status(201).json({
+        message: `Imported ${importedActivities.length} of ${activities.length} activities`,
+        activities: importedActivities,
+      });
+    } catch (error) {
+      res.status(500).json({ message: `Error importing activities: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Notifications Routes
+  
+  // Get all notifications
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const notifications = await storage.getAllNotifications();
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching notifications: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Mark notification as read
+  app.patch("/api/notifications/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const notification = await storage.getNotification(id);
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      const updatedNotification = await storage.updateNotification(id, { read: true });
+      res.json(updatedNotification);
+    } catch (error) {
+      res.status(500).json({ message: `Error updating notification: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Holidays Routes
+  
+  // Get holidays for specific year and regions
+  app.get("/api/holidays", async (req, res) => {
+    try {
+      const year = parseInt(req.query.year as string) || new Date().getFullYear();
+      const regions = (req.query.regions as string || "italy,europe,usa,asia").split(",");
+      
+      const holidays = await getHolidaysForYear(year, regions);
+      res.json(holidays);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching holidays: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  const httpServer = createServer(app);
+  return httpServer;
+}

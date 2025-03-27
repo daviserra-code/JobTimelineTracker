@@ -1,0 +1,308 @@
+import {
+  activities,
+  notifications,
+  Activity,
+  InsertActivity,
+  Notification,
+  InsertNotification,
+  User,
+  InsertUser,
+} from "@shared/schema";
+
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  
+  // Activity methods
+  getAllActivities(): Promise<Activity[]>;
+  getActivity(id: number): Promise<Activity | undefined>;
+  createActivity(activity: InsertActivity): Promise<Activity>;
+  updateActivity(id: number, activity: Partial<Activity>): Promise<Activity>;
+  deleteActivity(id: number): Promise<void>;
+  
+  // Notification methods
+  getAllNotifications(): Promise<Notification[]>;
+  getNotification(id: number): Promise<Notification | undefined>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  updateNotification(id: number, notification: Partial<Notification>): Promise<Notification>;
+  deleteNotification(id: number): Promise<void>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private activitiesMap: Map<number, Activity>;
+  private notificationsMap: Map<number, Notification>;
+  
+  private userCurrentId: number;
+  private activityCurrentId: number;
+  private notificationCurrentId: number;
+
+  constructor() {
+    this.users = new Map();
+    this.activitiesMap = new Map();
+    this.notificationsMap = new Map();
+    
+    this.userCurrentId = 1;
+    this.activityCurrentId = 1;
+    this.notificationCurrentId = 1;
+    
+    // Initialize with sample data
+    this.initializeSampleData();
+  }
+  
+  private initializeSampleData() {
+    // Create a sample user
+    const user: User = {
+      id: this.userCurrentId++,
+      username: "demo",
+      password: "demo123",
+    };
+    this.users.set(user.id, user);
+    
+    // Create sample activities
+    const sampleActivities: Omit<Activity, "id">[] = [
+      {
+        title: "Project Alpha: Phase 1",
+        description: "Initial phase of Project Alpha",
+        startDate: new Date(2025, 0, 10),
+        endDate: new Date(2025, 1, 25),
+        type: "confirmed",
+        userId: user.id,
+      },
+      {
+        title: "Project Alpha: Phase 2",
+        description: "Second phase of Project Alpha",
+        startDate: new Date(2025, 2, 15),
+        endDate: new Date(2025, 4, 20),
+        type: "tentative",
+        userId: user.id,
+      },
+      {
+        title: "Project Alpha: Phase 3",
+        description: "Final phase of Project Alpha",
+        startDate: new Date(2025, 6, 10),
+        endDate: new Date(2025, 9, 15),
+        type: "hypothetical",
+        userId: user.id,
+      },
+      {
+        title: "Client Meeting: Kickoff",
+        description: "Initial client kickoff meeting",
+        startDate: new Date(2025, 0, 15),
+        endDate: new Date(2025, 0, 15),
+        type: "confirmed",
+        userId: user.id,
+      },
+      {
+        title: "Client Meeting: Review",
+        description: "Client review meeting",
+        startDate: new Date(2025, 2, 25),
+        endDate: new Date(2025, 2, 25),
+        type: "confirmed",
+        userId: user.id,
+      },
+      {
+        title: "Client Meeting: Planning",
+        description: "Client planning session",
+        startDate: new Date(2025, 5, 5),
+        endDate: new Date(2025, 5, 5),
+        type: "tentative",
+        userId: user.id,
+      },
+      {
+        title: "New Year's Day",
+        description: "Public holiday",
+        startDate: new Date(2025, 0, 1),
+        endDate: new Date(2025, 0, 1),
+        type: "holiday",
+        userId: user.id,
+      },
+      {
+        title: "Easter",
+        description: "Public holiday",
+        startDate: new Date(2025, 3, 20),
+        endDate: new Date(2025, 3, 20),
+        type: "holiday",
+        userId: user.id,
+      },
+      {
+        title: "Summer Vacation",
+        description: "Annual summer holiday",
+        startDate: new Date(2025, 7, 1),
+        endDate: new Date(2025, 7, 15),
+        type: "holiday",
+        userId: user.id,
+      },
+      {
+        title: "Tech Conference",
+        description: "Annual technology conference",
+        startDate: new Date(2025, 2, 10),
+        endDate: new Date(2025, 2, 15),
+        type: "tentative",
+        userId: user.id,
+      },
+      {
+        title: "Leadership Workshop",
+        description: "Leadership skills development",
+        startDate: new Date(2025, 5, 25),
+        endDate: new Date(2025, 5, 30),
+        type: "confirmed",
+        userId: user.id,
+      },
+      {
+        title: "Industry Summit",
+        description: "Annual industry summit",
+        startDate: new Date(2025, 8, 15),
+        endDate: new Date(2025, 8, 20),
+        type: "hypothetical",
+        userId: user.id,
+      },
+      {
+        title: "Beta Testing",
+        description: "Product beta testing phase",
+        startDate: new Date(2025, 4, 10),
+        endDate: new Date(2025, 4, 30),
+        type: "tentative",
+        userId: user.id,
+      },
+      {
+        title: "Marketing Campaign",
+        description: "Marketing campaign kickoff",
+        startDate: new Date(2025, 6, 1),
+        endDate: new Date(2025, 6, 20),
+        type: "hypothetical",
+        userId: user.id,
+      },
+      {
+        title: "Product Launch",
+        description: "Official product launch event",
+        startDate: new Date(2025, 7, 15),
+        endDate: new Date(2025, 7, 15),
+        type: "confirmed",
+        userId: user.id,
+      },
+    ];
+    
+    // Add sample activities to the map
+    sampleActivities.forEach((activity) => {
+      const id = this.activityCurrentId++;
+      this.activitiesMap.set(id, { ...activity, id });
+      
+      // Create notifications for each activity
+      const startDate = new Date(activity.startDate);
+      const notifyDate = new Date(startDate);
+      notifyDate.setDate(startDate.getDate() - 5);
+      
+      this.notificationsMap.set(this.notificationCurrentId++, {
+        id: this.notificationCurrentId,
+        activityId: id,
+        notifyDate,
+        read: false,
+        userId: user.id,
+      });
+    });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.userCurrentId++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+  
+  // Activity methods
+  async getAllActivities(): Promise<Activity[]> {
+    return Array.from(this.activitiesMap.values());
+  }
+  
+  async getActivity(id: number): Promise<Activity | undefined> {
+    return this.activitiesMap.get(id);
+  }
+  
+  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
+    const id = this.activityCurrentId++;
+    const activity: Activity = { ...insertActivity, id };
+    this.activitiesMap.set(id, activity);
+    return activity;
+  }
+  
+  async updateActivity(id: number, activityData: Partial<Activity>): Promise<Activity> {
+    const existingActivity = this.activitiesMap.get(id);
+    
+    if (!existingActivity) {
+      throw new Error(`Activity with ID ${id} not found`);
+    }
+    
+    const updatedActivity: Activity = { ...existingActivity, ...activityData };
+    this.activitiesMap.set(id, updatedActivity);
+    
+    return updatedActivity;
+  }
+  
+  async deleteActivity(id: number): Promise<void> {
+    const deleted = this.activitiesMap.delete(id);
+    
+    if (!deleted) {
+      throw new Error(`Activity with ID ${id} not found`);
+    }
+    
+    // Also delete related notifications
+    for (const [notifId, notification] of this.notificationsMap.entries()) {
+      if (notification.activityId === id) {
+        this.notificationsMap.delete(notifId);
+      }
+    }
+  }
+  
+  // Notification methods
+  async getAllNotifications(): Promise<Notification[]> {
+    return Array.from(this.notificationsMap.values());
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return this.notificationsMap.get(id);
+  }
+  
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const id = this.notificationCurrentId++;
+    const notification: Notification = { ...insertNotification, id };
+    this.notificationsMap.set(id, notification);
+    return notification;
+  }
+  
+  async updateNotification(id: number, notificationData: Partial<Notification>): Promise<Notification> {
+    const existingNotification = this.notificationsMap.get(id);
+    
+    if (!existingNotification) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+    
+    const updatedNotification: Notification = { ...existingNotification, ...notificationData };
+    this.notificationsMap.set(id, updatedNotification);
+    
+    return updatedNotification;
+  }
+  
+  async deleteNotification(id: number): Promise<void> {
+    const deleted = this.notificationsMap.delete(id);
+    
+    if (!deleted) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+  }
+}
+
+export const storage = new MemStorage();

@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Timeline styles */
+.timeline-container {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.timeline-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+.day-hover:hover {
+  background-color: rgba(98, 0, 238, 0.08);
+}
+
+.activity {
+  transition: transform 0.2s;
+}
+
+.activity:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .timeline-month {
+    min-width: 240px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .timeline-month {
+    min-width: 120px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .timeline-month {
+    min-width: 80px;
+  }
+}
