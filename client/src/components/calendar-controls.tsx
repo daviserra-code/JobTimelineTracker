@@ -129,13 +129,26 @@ export default function CalendarControls({
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex items-center space-x-4 mb-2 md:mb-0">
             <div className="tour-view-modes">
-              <Select value={currentViewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
+              <Select 
+                value={currentViewMode} 
+                onValueChange={(value) => onViewModeChange(value as ViewMode)}
+                data-view-mode-toggle="true"
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Select view" />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(VIEW_MODES).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                    <SelectItem 
+                      key={value} 
+                      value={value}
+                      data-timeline-view={value === "timeline" ? "true" : undefined}
+                      data-month-view={value === "month" ? "true" : undefined}
+                      data-week-view={value === "week" ? "true" : undefined}
+                      data-day-view={value === "day" ? "true" : undefined}
+                    >
+                      {label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -147,7 +160,8 @@ export default function CalendarControls({
                 size="icon" 
                 onClick={goToPreviousPeriod}
                 disabled={currentViewMode === "timeline" && currentYear <= YEARS[0]}
-                title="Previous period"
+                title="Previous period (← key)"
+                data-prev-period="true"
               >
                 <span className="material-icons">navigate_before</span>
               </Button>
@@ -162,7 +176,8 @@ export default function CalendarControls({
                 size="icon" 
                 onClick={goToNextPeriod}
                 disabled={currentViewMode === "timeline" && currentYear >= YEARS[YEARS.length - 1]}
-                title="Next period"
+                title="Next period (→ key)"
+                data-next-period="true"
               >
                 <span className="material-icons">navigate_next</span>
               </Button>
@@ -171,7 +186,12 @@ export default function CalendarControls({
           
           <div className="flex items-center space-x-2">
             <div className="tour-filters">
-              <Button variant="outline" className="hidden md:flex items-center">
+              <Button 
+                variant="outline" 
+                className="hidden md:flex items-center"
+                data-filters-toggle="true"
+                title="Toggle filters (F key)"
+              >
                 <span className="material-icons text-sm mr-1">filter_list</span>
                 Filter
               </Button>
@@ -182,6 +202,7 @@ export default function CalendarControls({
                 variant="outline" 
                 className="flex items-center"
                 onClick={onOpenImportExport}
+                title="Import/Export activities"
               >
                 <span className="material-icons text-sm mr-1">download</span>
                 <span className="hidden sm:inline">Import/Export</span>
@@ -192,6 +213,8 @@ export default function CalendarControls({
               <Button 
                 onClick={onOpenAddActivity}
                 className="rounded-full bg-primary text-white p-3 md:px-4 md:py-2 flex items-center shadow-md hover:bg-opacity-90"
+                data-new-activity="true"
+                title="Add new activity (N key)"
               >
                 <span className="material-icons md:mr-1">add</span>
                 <span className="hidden md:inline">Add Activity</span>

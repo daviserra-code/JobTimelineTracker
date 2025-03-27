@@ -28,11 +28,18 @@ export default function MobileNav({ currentViewMode, onViewModeChange }: MobileN
             onClick={() => setFormOpen(true)}
             variant="ghost" 
             className="flex flex-col items-center rounded-full bg-primary text-primary-foreground p-2 -mt-5"
+            data-new-activity="true"
+            title="Add new activity (N key)"
           >
             <PlusCircle className="h-8 w-8" />
           </Button>
           
-          <div className="flex flex-col items-center p-3 cursor-pointer" onClick={() => onViewModeChange(currentViewMode === "timeline" ? "month" : "timeline")}>
+          <div 
+            className="flex flex-col items-center p-3 cursor-pointer" 
+            onClick={() => onViewModeChange(currentViewMode === "timeline" ? "month" : "timeline")}
+            data-view-toggle="true"
+            title="Toggle view mode (T key)"
+          >
             <Calendar className="h-5 w-5" />
             <span className="text-xs mt-1">{currentViewMode === "timeline" ? "Month" : "Timeline"}</span>
           </div>

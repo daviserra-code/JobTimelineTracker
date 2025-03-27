@@ -118,10 +118,11 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
         <form onSubmit={handleSearchSubmit} className="flex-1 relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search activities..." 
+            placeholder="Search activities... (Press S)" 
             className="pl-8 pr-10"
             value={searchQuery}
             onChange={handleSearchQueryChange}
+            data-search-input="true"
           />
           {searchQuery && (
             <button 

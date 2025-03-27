@@ -156,15 +156,17 @@ export default function TimelineView({
         <div className="flex space-x-2">
           <button 
             className="p-1 rounded hover:bg-gray-100" 
-            title="Zoom out"
+            title="Zoom out (- key)"
             onClick={onZoomOut}
+            data-zoom-out="true"
           >
             <span className="material-icons">zoom_out</span>
           </button>
           <button 
             className="p-1 rounded hover:bg-gray-100" 
-            title="Zoom in"
+            title="Zoom in (+ key)"
             onClick={onZoomIn}
+            data-zoom-in="true"
           >
             <span className="material-icons">zoom_in</span>
           </button>

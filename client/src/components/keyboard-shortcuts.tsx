@@ -58,7 +58,12 @@ export function KeyboardShortcuts() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2" 
+          data-keyboard-shortcuts-trigger="true"
+        >
           <Keyboard className="h-4 w-4" />
           <span>Keyboard Shortcuts</span>
         </Button>
