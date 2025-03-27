@@ -6,6 +6,9 @@ import { useHolidays } from "@/hooks/use-holidays";
 import { YEARS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import TimelineView from "@/components/timeline-view";
+import MonthView from "@/components/month-view";
+import WeekView from "@/components/week-view";
+import DayView from "@/components/day-view";
 import ActivityLegend from "@/components/activity-legend";
 import CalendarControls from "@/components/calendar-controls";
 import NotificationsPanel from "@/components/notifications-panel";
@@ -17,6 +20,9 @@ export default function Home() {
   
   // State for calendar controls
   const [currentYear, setCurrentYear] = useState(2025);
+  const [currentMonth, setCurrentMonth] = useState(0); // 0-indexed (January is 0)
+  const [currentWeek, setCurrentWeek] = useState(1); // 1-indexed (Week 1-5 of the month)
+  const [currentDay, setCurrentDay] = useState(1); // 1-indexed (Day of month)
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
@@ -72,6 +78,22 @@ export default function Home() {
     }
   };
   
+  const changeMonth = (month: number) => {
+    if (month >= 0 && month <= 11) {
+      setCurrentMonth(month);
+    }
+  };
+  
+  const changeWeek = (week: number) => {
+    // Weeks are 1-indexed
+    setCurrentWeek(week);
+  };
+  
+  const changeDay = (day: number) => {
+    // Days are 1-indexed
+    setCurrentDay(day);
+  };
+  
   const openImportExportDialog = () => {
     setIsImportExportOpen(true);
   };
@@ -88,8 +110,14 @@ export default function Home() {
     <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6">
       <CalendarControls
         currentYear={currentYear}
+        currentMonth={currentMonth}
+        currentWeek={currentWeek}
+        currentDay={currentDay}
         currentViewMode={viewMode}
         onYearChange={changeYear}
+        onMonthChange={changeMonth}
+        onWeekChange={changeWeek}
+        onDayChange={changeDay}
         onViewModeChange={setViewMode}
         onOpenAddActivity={() => setIsAddActivityOpen(true)}
         onOpenImportExport={openImportExportDialog}
@@ -105,6 +133,38 @@ export default function Home() {
           zoomLevel={zoomLevel}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
+          onActivityClick={handleActivityClick}
+        />
+      )}
+      
+      {viewMode === "month" && (
+        <MonthView
+          activities={activitiesLoading ? [] : currentYearActivities}
+          holidays={holidaysLoading ? [] : holidays}
+          year={currentYear}
+          month={currentMonth}
+          onActivityClick={handleActivityClick}
+        />
+      )}
+      
+      {viewMode === "week" && (
+        <WeekView
+          activities={activitiesLoading ? [] : currentYearActivities}
+          holidays={holidaysLoading ? [] : holidays}
+          year={currentYear}
+          month={currentMonth}
+          weekNumber={currentWeek}
+          onActivityClick={handleActivityClick}
+        />
+      )}
+      
+      {viewMode === "day" && (
+        <DayView
+          activities={activitiesLoading ? [] : currentYearActivities}
+          holidays={holidaysLoading ? [] : holidays}
+          year={currentYear}
+          month={currentMonth}
+          day={currentDay}
           onActivityClick={handleActivityClick}
         />
       )}
