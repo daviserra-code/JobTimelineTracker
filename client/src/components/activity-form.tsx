@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ACTIVITY_TYPES, ACTIVITY_STATUSES } from "@/lib/constants";
 import { InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
 import { useActivities } from "@/hooks/use-activities";
@@ -17,14 +17,26 @@ const formSchema = z.object({
   title: z.string().min(2, { message: "Title must be at least 2 characters" }),
   description: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required" }),
+  startTime: z.string().optional(),
   endDate: z.date({ required_error: "End date is required" }),
+  endTime: z.string().optional(),
   type: z.enum(["project", "meeting", "training", "holiday"] as const),
   status: z.enum(["confirmed", "tentative", "hypothetical"] as const),
   category: z.string().optional(),
   location: z.string().optional(),
   userId: z.number().optional(),
-}).refine(data => data.endDate >= data.startDate, {
-  message: "End date must be after start date",
+}).refine(data => {
+  const start = data.startTime 
+    ? new Date(`${format(data.startDate, 'yyyy-MM-dd')}T${data.startTime}`)
+    : data.startDate;
+  
+  const end = data.endTime
+    ? new Date(`${format(data.endDate, 'yyyy-MM-dd')}T${data.endTime}`)
+    : data.endDate;
+    
+  return end >= start;
+}, {
+  message: "End date/time must be after start date/time",
   path: ["endDate"]
 });
 
@@ -44,7 +56,9 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       title: initialData?.title || "",
       description: initialData?.description || "",
       startDate: initialData?.startDate ? new Date(initialData.startDate) : new Date(),
+      startTime: initialData?.startDate ? format(new Date(initialData.startDate), "HH:mm") : "",
       endDate: initialData?.endDate ? new Date(initialData.endDate) : new Date(),
+      endTime: initialData?.endDate ? format(new Date(initialData.endDate), "HH:mm") : "",
       type: (initialData?.type as ActivityType) || "meeting",
       status: (initialData?.status as ActivityStatus) || "confirmed",
       category: initialData?.category || "",
@@ -54,13 +68,32 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
   });
   
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Create full datetime objects by combining date and time
+    const startDateTime = values.startTime 
+      ? new Date(`${format(values.startDate, 'yyyy-MM-dd')}T${values.startTime}:00`) 
+      : values.startDate;
+    
+    const endDateTime = values.endTime 
+      ? new Date(`${format(values.endDate, 'yyyy-MM-dd')}T${values.endTime}:00`) 
+      : values.endDate;
+
+    // Prepare activity data with proper date objects
+    const activityData = {
+      ...values,
+      startDate: startDateTime,
+      endDate: endDateTime,
+      // Exclude time fields as they are now combined into dates
+      startTime: undefined,
+      endTime: undefined
+    };
+    
     if (actionType === "create") {
-      createActivity(values);
+      createActivity(activityData);
     } else if (actionType === "edit" && initialData) {
       // For editing, we need to get the ID from the initialData which might be cast as Activity
       const activityId = (initialData as any).id;
       if (activityId) {
-        updateActivity({ id: activityId, activity: values });
+        updateActivity({ id: activityId, activity: activityData });
       }
     }
     onOpenChange(false);
@@ -103,54 +136,99 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        className="w-full"
-                        value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                        onChange={(e) => {
-                          const date = e.target.value ? new Date(e.target.value) : null;
-                          if (date) {
-                            field.onChange(date);
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        className="w-full"
-                        value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                        onChange={(e) => {
-                          const date = e.target.value ? new Date(e.target.value) : null;
-                          if (date) {
-                            field.onChange(date);
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <div className="w-1/2 pr-2">
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Start Date</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            className="w-full"
+                            value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                            onChange={(e) => {
+                              const date = e.target.value ? new Date(e.target.value) : null;
+                              if (date) {
+                                field.onChange(date);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="w-1/2 pl-2">
+                  <FormField
+                    control={form.control}
+                    name="startTime"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Start Time</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            className="w-full"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="w-1/2 pr-2">
+                  <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>End Date</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            className="w-full"
+                            value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                            onChange={(e) => {
+                              const date = e.target.value ? new Date(e.target.value) : null;
+                              if (date) {
+                                field.onChange(date);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="w-1/2 pl-2">
+                  <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>End Time</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            className="w-full"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
