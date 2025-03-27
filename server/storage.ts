@@ -2,6 +2,7 @@ import {
   activities,
   notifications,
   userPreferences,
+  users,
   Activity,
   InsertActivity,
   Notification,
@@ -11,6 +12,8 @@ import {
   UserPreference,
   InsertUserPreference
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -36,46 +39,164 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   updateNotification(id: number, notification: Partial<Notification>): Promise<Notification>;
   deleteNotification(id: number): Promise<void>;
+  
+  // Database initialization
+  initializeDatabase(): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private activitiesMap: Map<number, Activity>;
-  private notificationsMap: Map<number, Notification>;
-  private userPreferencesMap: Map<number, UserPreference>;
-  
-  private userCurrentId: number;
-  private activityCurrentId: number;
-  private notificationCurrentId: number;
-  private userPreferenceCurrentId: number;
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
 
-  constructor() {
-    this.users = new Map();
-    this.activitiesMap = new Map();
-    this.notificationsMap = new Map();
-    this.userPreferencesMap = new Map();
-    
-    this.userCurrentId = 1;
-    this.activityCurrentId = 1;
-    this.notificationCurrentId = 1;
-    this.userPreferenceCurrentId = 1;
-    
-    // Initialize with sample data
-    this.initializeSampleData();
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
   
-  private initializeSampleData() {
+  // User Preferences methods
+  async getUserPreferences(userId: number): Promise<UserPreference | undefined> {
+    const result = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return result.length > 0 ? result[0] : undefined;
+  }
+  
+  async createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference> {
+    const result = await db.insert(userPreferences).values(preferences).returning();
+    return result[0];
+  }
+  
+  async updateUserPreferences(userId: number, preferencesData: Partial<UserPreference>): Promise<UserPreference> {
+    // Find user preferences by userId
+    const existingPreferences = await this.getUserPreferences(userId);
+    
+    if (!existingPreferences) {
+      // If no preferences exist for this user, create them
+      return this.createUserPreferences({ 
+        userId, 
+        ...preferencesData
+      } as InsertUserPreference);
+    }
+    
+    // Update the existing preferences
+    const result = await db.update(userPreferences)
+      .set({ ...preferencesData, updatedAt: new Date() })
+      .where(eq(userPreferences.id, existingPreferences.id))
+      .returning();
+    
+    return result[0];
+  }
+  
+  // Activity methods
+  async getAllActivities(): Promise<Activity[]> {
+    return db.select().from(activities);
+  }
+  
+  async getActivity(id: number): Promise<Activity | undefined> {
+    const result = await db.select().from(activities).where(eq(activities.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+  
+  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
+    const result = await db.insert(activities).values(insertActivity).returning();
+    return result[0];
+  }
+  
+  async updateActivity(id: number, activityData: Partial<Activity>): Promise<Activity> {
+    const existingActivity = await this.getActivity(id);
+    
+    if (!existingActivity) {
+      throw new Error(`Activity with ID ${id} not found`);
+    }
+    
+    const result = await db.update(activities)
+      .set(activityData)
+      .where(eq(activities.id, id))
+      .returning();
+    
+    return result[0];
+  }
+  
+  async deleteActivity(id: number): Promise<void> {
+    const deleteResult = await db.delete(activities)
+      .where(eq(activities.id, id))
+      .returning({ deletedId: activities.id });
+    
+    if (deleteResult.length === 0) {
+      throw new Error(`Activity with ID ${id} not found`);
+    }
+    
+    // Also delete related notifications
+    await db.delete(notifications)
+      .where(eq(notifications.activityId, id));
+  }
+  
+  // Notification methods
+  async getAllNotifications(): Promise<Notification[]> {
+    return db.select().from(notifications);
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const result = await db.select().from(notifications).where(eq(notifications.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+  
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const result = await db.insert(notifications).values(insertNotification).returning();
+    return result[0];
+  }
+  
+  async updateNotification(id: number, notificationData: Partial<Notification>): Promise<Notification> {
+    const existingNotification = await this.getNotification(id);
+    
+    if (!existingNotification) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+    
+    const result = await db.update(notifications)
+      .set(notificationData)
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return result[0];
+  }
+  
+  async deleteNotification(id: number): Promise<void> {
+    const deleteResult = await db.delete(notifications)
+      .where(eq(notifications.id, id))
+      .returning({ deletedId: notifications.id });
+    
+    if (deleteResult.length === 0) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+  }
+  
+  // Database initialization with sample data
+  async initializeDatabase(): Promise<void> {
+    // Check if we already have a demo user
+    const existingUser = await this.getUserByUsername("demo");
+    
+    if (existingUser) {
+      console.log("Database already initialized with sample data");
+      return;
+    }
+    
+    console.log("Initializing database with sample data...");
+    
     // Create a sample user
-    const user: User = {
-      id: this.userCurrentId++,
+    const user = await this.createUser({
       username: "demo",
       password: "demo123",
-    };
-    this.users.set(user.id, user);
+    });
     
     // Create default user preferences
-    const defaultPreferences: UserPreference = {
-      id: this.userPreferenceCurrentId++,
+    const defaultPreferences = await this.createUserPreferences({
       userId: user.id,
       defaultViewMode: "month",
       defaultRegions: ["italy", "europe"],
@@ -89,12 +210,10 @@ export class MemStorage implements IStorage {
           end: "17:00"
         }
       },
-      updatedAt: new Date()
-    };
-    this.userPreferencesMap.set(defaultPreferences.id, defaultPreferences);
+    });
     
     // Create sample activities
-    const sampleActivities: Omit<Activity, "id">[] = [
+    const sampleActivities = [
       {
         title: "Project Alpha: Phase 1",
         description: "Initial phase of Project Alpha",
@@ -292,200 +411,26 @@ export class MemStorage implements IStorage {
       },
     ];
     
-    // Add sample activities to the map
-    sampleActivities.forEach((activity) => {
-      const id = this.activityCurrentId++;
-      this.activitiesMap.set(id, { ...activity, id });
+    // Add sample activities to the database and create notifications for each
+    for (const activityData of sampleActivities) {
+      const activity = await this.createActivity(activityData);
       
-      // Create notifications for each activity
+      // Create a notification for the activity
       const startDate = new Date(activity.startDate);
       const notifyDate = new Date(startDate);
       notifyDate.setDate(startDate.getDate() - 5);
       
-      this.notificationsMap.set(this.notificationCurrentId++, {
-        id: this.notificationCurrentId,
-        activityId: id,
+      await this.createNotification({
+        activityId: activity.id,
         notifyDate,
         read: false,
         userId: user.id,
       });
-    });
-  }
-
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
-  
-  // User Preferences methods
-  async getUserPreferences(userId: number): Promise<UserPreference | undefined> {
-    // Find user preferences by userId
-    return Array.from(this.userPreferencesMap.values()).find(
-      (prefs) => prefs.userId === userId
-    );
-  }
-  
-  async createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference> {
-    const id = this.userPreferenceCurrentId++;
-    const now = new Date();
-    
-    // Create a properly typed UserPreference object
-    const userPreference: UserPreference = {
-      id,
-      userId: preferences.userId,
-      defaultViewMode: preferences.defaultViewMode !== undefined ? preferences.defaultViewMode : null,
-      defaultRegions: preferences.defaultRegions !== undefined ? preferences.defaultRegions : ['italy'],
-      theme: preferences.theme !== undefined ? preferences.theme : null,
-      notificationsEnabled: preferences.notificationsEnabled !== undefined ? preferences.notificationsEnabled : null,
-      notificationLeadTime: preferences.notificationLeadTime !== undefined ? preferences.notificationLeadTime : null,
-      customSettings: preferences.customSettings !== undefined ? preferences.customSettings : null,
-      updatedAt: now
-    };
-    
-    this.userPreferencesMap.set(id, userPreference);
-    return userPreference;
-  }
-  
-  async updateUserPreferences(userId: number, preferencesData: Partial<UserPreference>): Promise<UserPreference> {
-    // Find user preferences by userId
-    const existingPreferences = Array.from(this.userPreferencesMap.values()).find(
-      (prefs) => prefs.userId === userId
-    );
-    
-    if (!existingPreferences) {
-      // If no preferences exist for this user, create them
-      return this.createUserPreferences({ 
-        userId, 
-        ...preferencesData
-      } as InsertUserPreference);
     }
     
-    // Update the existing preferences
-    const updatedPreferences: UserPreference = { 
-      ...existingPreferences, 
-      ...preferencesData,
-      updatedAt: new Date()
-    };
-    
-    this.userPreferencesMap.set(existingPreferences.id, updatedPreferences);
-    return updatedPreferences;
-  }
-  
-  // Activity methods
-  async getAllActivities(): Promise<Activity[]> {
-    return Array.from(this.activitiesMap.values());
-  }
-  
-  async getActivity(id: number): Promise<Activity | undefined> {
-    return this.activitiesMap.get(id);
-  }
-  
-  async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    const id = this.activityCurrentId++;
-    // Ensure proper type conversion for required fields
-    const activity: Activity = {
-      id,
-      title: insertActivity.title,
-      description: insertActivity.description || null,
-      startDate: insertActivity.startDate,
-      endDate: insertActivity.endDate,
-      type: insertActivity.type,
-      status: insertActivity.status || "confirmed",
-      category: insertActivity.category || null,
-      location: insertActivity.location || null,
-      region: insertActivity.region || null,
-      notificationEnabled: insertActivity.notificationEnabled !== undefined ? insertActivity.notificationEnabled : true,
-      userId: insertActivity.userId || null
-    };
-    this.activitiesMap.set(id, activity);
-    return activity;
-  }
-  
-  async updateActivity(id: number, activityData: Partial<Activity>): Promise<Activity> {
-    const existingActivity = this.activitiesMap.get(id);
-    
-    if (!existingActivity) {
-      throw new Error(`Activity with ID ${id} not found`);
-    }
-    
-    const updatedActivity: Activity = { ...existingActivity, ...activityData };
-    this.activitiesMap.set(id, updatedActivity);
-    
-    return updatedActivity;
-  }
-  
-  async deleteActivity(id: number): Promise<void> {
-    const deleted = this.activitiesMap.delete(id);
-    
-    if (!deleted) {
-      throw new Error(`Activity with ID ${id} not found`);
-    }
-    
-    // Also delete related notifications
-    // Use Array.from to avoid MapIterator issues
-    Array.from(this.notificationsMap.entries()).forEach(([notifId, notification]) => {
-      if (notification.activityId === id) {
-        this.notificationsMap.delete(notifId);
-      }
-    });
-  }
-  
-  // Notification methods
-  async getAllNotifications(): Promise<Notification[]> {
-    return Array.from(this.notificationsMap.values());
-  }
-  
-  async getNotification(id: number): Promise<Notification | undefined> {
-    return this.notificationsMap.get(id);
-  }
-  
-  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
-    const id = this.notificationCurrentId++;
-    // Ensure proper type conversion for required fields
-    const notification: Notification = {
-      id,
-      userId: insertNotification.userId || null,
-      activityId: insertNotification.activityId || null,
-      notifyDate: insertNotification.notifyDate,
-      read: insertNotification.read || false
-    };
-    this.notificationsMap.set(id, notification);
-    return notification;
-  }
-  
-  async updateNotification(id: number, notificationData: Partial<Notification>): Promise<Notification> {
-    const existingNotification = this.notificationsMap.get(id);
-    
-    if (!existingNotification) {
-      throw new Error(`Notification with ID ${id} not found`);
-    }
-    
-    const updatedNotification: Notification = { ...existingNotification, ...notificationData };
-    this.notificationsMap.set(id, updatedNotification);
-    
-    return updatedNotification;
-  }
-  
-  async deleteNotification(id: number): Promise<void> {
-    const deleted = this.notificationsMap.delete(id);
-    
-    if (!deleted) {
-      throw new Error(`Notification with ID ${id} not found`);
-    }
+    console.log("Database initialized with sample data");
   }
 }
 
-export const storage = new MemStorage();
+// Create and export the storage instance
+export const storage = new DatabaseStorage();
