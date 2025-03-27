@@ -23,8 +23,20 @@ export const activities = pgTable("activities", {
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
 });
 
-export const insertActivitySchema = createInsertSchema(activities).omit({
+// Create and refine the insert schema to handle string dates properly
+const baseInsertActivitySchema = createInsertSchema(activities).omit({
   id: true,
+});
+
+export const insertActivitySchema = baseInsertActivitySchema.extend({
+  startDate: z.preprocess(
+    (arg) => (typeof arg === 'string' ? new Date(arg) : arg),
+    z.date()
+  ),
+  endDate: z.preprocess(
+    (arg) => (typeof arg === 'string' ? new Date(arg) : arg),
+    z.date()
+  ),
 });
 
 export const notifications = pgTable("notifications", {
@@ -35,8 +47,16 @@ export const notifications = pgTable("notifications", {
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
 });
 
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
+// Create and refine the notification schema to handle string dates
+const baseInsertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
+});
+
+export const insertNotificationSchema = baseInsertNotificationSchema.extend({
+  notifyDate: z.preprocess(
+    (arg) => (typeof arg === 'string' ? new Date(arg) : arg),
+    z.date()
+  ),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

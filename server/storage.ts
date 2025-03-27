@@ -234,7 +234,16 @@ export class MemStorage implements IStorage {
   
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     const id = this.activityCurrentId++;
-    const activity: Activity = { ...insertActivity, id };
+    // Ensure proper type conversion for required fields
+    const activity: Activity = {
+      id,
+      title: insertActivity.title,
+      description: insertActivity.description || null,
+      startDate: insertActivity.startDate,
+      endDate: insertActivity.endDate,
+      type: insertActivity.type,
+      userId: insertActivity.userId || null
+    };
     this.activitiesMap.set(id, activity);
     return activity;
   }
@@ -278,7 +287,14 @@ export class MemStorage implements IStorage {
   
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
     const id = this.notificationCurrentId++;
-    const notification: Notification = { ...insertNotification, id };
+    // Ensure proper type conversion for required fields
+    const notification: Notification = {
+      id,
+      userId: insertNotification.userId || null,
+      activityId: insertNotification.activityId || null,
+      notifyDate: insertNotification.notifyDate,
+      read: insertNotification.read || false
+    };
     this.notificationsMap.set(id, notification);
     return notification;
   }
