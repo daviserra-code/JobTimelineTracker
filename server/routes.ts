@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getHolidaysForYear } from "./holiday-api";
 import { z } from "zod";
-import { insertActivitySchema, insertNotificationSchema } from "@shared/schema";
+import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix: /api
@@ -168,6 +168,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedNotification);
     } catch (error) {
       res.status(500).json({ message: `Error updating notification: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // User Preferences Routes
+  
+  // Get user preferences by user ID
+  app.get("/api/user-preferences/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const preferences = await storage.getUserPreferences(userId);
+      
+      if (!preferences) {
+        return res.status(404).json({ message: "User preferences not found" });
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching user preferences: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Create or update user preferences
+  app.post("/api/user-preferences", async (req, res) => {
+    try {
+      const validatedData = insertUserPreferencesSchema.parse(req.body);
+      
+      // Check if preferences already exist for this user
+      const existingPreferences = await storage.getUserPreferences(validatedData.userId);
+      
+      if (existingPreferences) {
+        // Update existing preferences
+        const updatedPreferences = await storage.updateUserPreferences(
+          validatedData.userId,
+          validatedData
+        );
+        return res.json(updatedPreferences);
+      } else {
+        // Create new preferences
+        const newPreferences = await storage.createUserPreferences(validatedData);
+        return res.status(201).json(newPreferences);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid user preferences data", errors: error.errors });
+      }
+      
+      res.status(500).json({ message: `Error creating/updating user preferences: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Update user preferences
+  app.patch("/api/user-preferences/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const updatedPreferences = await storage.updateUserPreferences(userId, req.body);
+      res.json(updatedPreferences);
+    } catch (error) {
+      res.status(500).json({ message: `Error updating user preferences: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
   

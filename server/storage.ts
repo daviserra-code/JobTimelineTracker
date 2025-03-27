@@ -1,12 +1,15 @@
 import {
   activities,
   notifications,
+  userPreferences,
   Activity,
   InsertActivity,
   Notification,
   InsertNotification,
   User,
   InsertUser,
+  UserPreference,
+  InsertUserPreference
 } from "@shared/schema";
 
 export interface IStorage {
@@ -14,6 +17,11 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // User Preferences methods
+  getUserPreferences(userId: number): Promise<UserPreference | undefined>;
+  createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference>;
+  updateUserPreferences(userId: number, preferences: Partial<UserPreference>): Promise<UserPreference>;
   
   // Activity methods
   getAllActivities(): Promise<Activity[]>;
@@ -34,19 +42,23 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private activitiesMap: Map<number, Activity>;
   private notificationsMap: Map<number, Notification>;
+  private userPreferencesMap: Map<number, UserPreference>;
   
   private userCurrentId: number;
   private activityCurrentId: number;
   private notificationCurrentId: number;
+  private userPreferenceCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.activitiesMap = new Map();
     this.notificationsMap = new Map();
+    this.userPreferencesMap = new Map();
     
     this.userCurrentId = 1;
     this.activityCurrentId = 1;
     this.notificationCurrentId = 1;
+    this.userPreferenceCurrentId = 1;
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -60,6 +72,26 @@ export class MemStorage implements IStorage {
       password: "demo123",
     };
     this.users.set(user.id, user);
+    
+    // Create default user preferences
+    const defaultPreferences: UserPreference = {
+      id: this.userPreferenceCurrentId++,
+      userId: user.id,
+      defaultViewMode: "month",
+      defaultRegions: ["italy", "europe"],
+      theme: "light",
+      notificationsEnabled: true,
+      notificationLeadTime: 3,
+      customSettings: {
+        showWeekends: true,
+        defaultWorkingHours: {
+          start: "09:00",
+          end: "17:00"
+        }
+      },
+      updatedAt: new Date()
+    };
+    this.userPreferencesMap.set(defaultPreferences.id, defaultPreferences);
     
     // Create sample activities
     const sampleActivities: Omit<Activity, "id">[] = [
@@ -236,6 +268,54 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+  
+  // User Preferences methods
+  async getUserPreferences(userId: number): Promise<UserPreference | undefined> {
+    // Find user preferences by userId
+    return Array.from(this.userPreferencesMap.values()).find(
+      (prefs) => prefs.userId === userId
+    );
+  }
+  
+  async createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference> {
+    const id = this.userPreferenceCurrentId++;
+    const now = new Date();
+    const userPreference: UserPreference = { 
+      ...preferences, 
+      id,
+      defaultRegions: preferences.defaultRegions || ['italy'],
+      customSettings: preferences.customSettings || null,
+      updatedAt: now
+    };
+    
+    this.userPreferencesMap.set(id, userPreference);
+    return userPreference;
+  }
+  
+  async updateUserPreferences(userId: number, preferencesData: Partial<UserPreference>): Promise<UserPreference> {
+    // Find user preferences by userId
+    const existingPreferences = Array.from(this.userPreferencesMap.values()).find(
+      (prefs) => prefs.userId === userId
+    );
+    
+    if (!existingPreferences) {
+      // If no preferences exist for this user, create them
+      return this.createUserPreferences({ 
+        userId, 
+        ...preferencesData
+      } as InsertUserPreference);
+    }
+    
+    // Update the existing preferences
+    const updatedPreferences: UserPreference = { 
+      ...existingPreferences, 
+      ...preferencesData,
+      updatedAt: new Date()
+    };
+    
+    this.userPreferencesMap.set(existingPreferences.id, updatedPreferences);
+    return updatedPreferences;
   }
   
   // Activity methods

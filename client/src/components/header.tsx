@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Bell, Download, User, Menu, HelpCircle } from "lucide-react";
+import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings } from "lucide-react";
 import HelpMenu from "@/components/help-menu";
+import UserPreferencesDialog from "@/components/user-preferences-dialog";
 
 export default function Header() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false);
   
   const toggleDrawer = () => {
     setIsDrawerOpen(!isDrawerOpen);
@@ -40,6 +42,15 @@ export default function Header() {
                 <span>Account</span>
               </Button>
               
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                onClick={() => setIsPreferencesDialogOpen(true)}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Preferences</span>
+              </Button>
+              
               <div className="ml-2 text-white">
                 <HelpMenu />
               </div>
@@ -47,6 +58,12 @@ export default function Header() {
           </div>
         </div>
       </header>
+      
+      {/* User Preferences Dialog */}
+      <UserPreferencesDialog 
+        open={isPreferencesDialogOpen} 
+        onOpenChange={setIsPreferencesDialogOpen} 
+      />
       
       {/* Mobile Drawer */}
       {isDrawerOpen && (
@@ -94,6 +111,18 @@ export default function Header() {
                       <span>Account</span>
                     </a>
                   </Link>
+                </li>
+                <li>
+                  <button 
+                    className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      setIsPreferencesDialogOpen(true);
+                    }}
+                  >
+                    <Settings className="mr-3 h-5 w-5 text-gray-600" />
+                    <span>Preferences</span>
+                  </button>
                 </li>
                 <li className="pt-4 border-t mt-4">
                   <Link href="/">
