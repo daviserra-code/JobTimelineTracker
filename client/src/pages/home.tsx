@@ -15,6 +15,7 @@ import NotificationsPanel from "@/components/notifications-panel";
 import ImportExportDialog from "@/components/import-export-dialog";
 import ActivityForm from "@/components/activity-form";
 import { ActivityFilters } from "@/components/activity-filters";
+import type { ActivityFilters as ActivityFiltersType } from "@/components/activity-filters";
 
 export default function Home() {
   const isMobile = useMobile();
@@ -30,9 +31,12 @@ export default function Home() {
   const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<ActivityFiltersType | null>(null);
   
-  // Get activities and holidays data
-  const { activities, isLoading: activitiesLoading } = useActivities();
+  // Get activities and holidays data with optional filtering
+  const { activities, isLoading: activitiesLoading } = useActivities(
+    activeFilters ? { filters: activeFilters } : undefined
+  );
   const { holidays, isLoading: holidaysLoading } = useHolidays(["italy", "europe", "usa", "asia"], currentYear);
   
   // Functions for timeline zooming
@@ -130,7 +134,7 @@ export default function Home() {
         <ActivityFilters
           onFilterChange={(filters) => {
             console.log("Filters applied:", filters);
-            // TODO: Implement filtering logic here
+            setActiveFilters(filters);
           }}
         />
       </div>

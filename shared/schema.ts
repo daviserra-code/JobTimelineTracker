@@ -38,6 +38,10 @@ export const activities = pgTable("activities", {
   endDate: timestamp("end_date").notNull(),
   type: text("type").notNull(), // project, meeting, training, holiday
   status: text("status").notNull().default("confirmed"), // confirmed, tentative, hypothetical
+  category: text("category"), // custom categorization
+  location: text("location"), // location of the activity
+  region: text("region"), // region associated with the activity (for holidays)
+  notificationEnabled: boolean("notification_enabled").default(true),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
 });
 

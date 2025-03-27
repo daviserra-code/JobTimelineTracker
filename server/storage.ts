@@ -102,6 +102,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 1, 25),
         type: "project",
         status: "confirmed",
+        category: "Development",
+        location: "Remote",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -111,6 +115,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 4, 20),
         type: "project",
         status: "tentative",
+        category: "Development",
+        location: "Remote",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -120,6 +128,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 9, 15),
         type: "project",
         status: "hypothetical",
+        category: "Development",
+        location: "Remote",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -129,6 +141,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 0, 15),
         type: "meeting",
         status: "confirmed",
+        category: "Client",
+        location: "Main Office",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -138,6 +154,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 2, 25),
         type: "meeting",
         status: "confirmed",
+        category: "Client",
+        location: "Main Office",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -147,6 +167,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 5, 5),
         type: "meeting",
         status: "tentative",
+        category: "Client",
+        location: "Conference Room",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -156,6 +180,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 0, 1),
         type: "holiday",
         status: "confirmed",
+        category: "Public Holiday",
+        location: "Italy",
+        region: "italy",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -165,6 +193,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 3, 20),
         type: "holiday",
         status: "confirmed",
+        category: "Public Holiday",
+        location: "Italy",
+        region: "italy",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -174,6 +206,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 7, 15),
         type: "holiday",
         status: "confirmed",
+        category: "Personal",
+        location: "Beach Resort",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -183,6 +219,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 2, 15),
         type: "training",
         status: "tentative",
+        category: "Professional Development",
+        location: "Convention Center",
+        region: "usa",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -192,6 +232,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 5, 30),
         type: "training",
         status: "confirmed",
+        category: "Professional Development",
+        location: "Corporate Training Center",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -201,6 +245,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 8, 20),
         type: "training",
         status: "hypothetical",
+        category: "Professional Development",
+        location: "Global Conference Center",
+        region: "asia",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -210,6 +258,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 4, 30),
         type: "project",
         status: "tentative",
+        category: "Product Development",
+        location: "Tech Lab",
+        region: "europe",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -219,6 +271,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 6, 20),
         type: "project",
         status: "hypothetical",
+        category: "Marketing",
+        location: "Marketing Department",
+        region: "usa",
+        notificationEnabled: true,
         userId: user.id,
       },
       {
@@ -228,6 +284,10 @@ export class MemStorage implements IStorage {
         endDate: new Date(2025, 7, 15),
         type: "meeting",
         status: "confirmed",
+        category: "Product Development",
+        location: "Conference Hall",
+        region: "usa",
+        notificationEnabled: true,
         userId: user.id,
       },
     ];
@@ -281,11 +341,17 @@ export class MemStorage implements IStorage {
   async createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference> {
     const id = this.userPreferenceCurrentId++;
     const now = new Date();
-    const userPreference: UserPreference = { 
-      ...preferences, 
+    
+    // Create a properly typed UserPreference object
+    const userPreference: UserPreference = {
       id,
-      defaultRegions: preferences.defaultRegions || ['italy'],
-      customSettings: preferences.customSettings || null,
+      userId: preferences.userId,
+      defaultViewMode: preferences.defaultViewMode !== undefined ? preferences.defaultViewMode : null,
+      defaultRegions: preferences.defaultRegions !== undefined ? preferences.defaultRegions : ['italy'],
+      theme: preferences.theme !== undefined ? preferences.theme : null,
+      notificationsEnabled: preferences.notificationsEnabled !== undefined ? preferences.notificationsEnabled : null,
+      notificationLeadTime: preferences.notificationLeadTime !== undefined ? preferences.notificationLeadTime : null,
+      customSettings: preferences.customSettings !== undefined ? preferences.customSettings : null,
       updatedAt: now
     };
     
@@ -338,6 +404,10 @@ export class MemStorage implements IStorage {
       endDate: insertActivity.endDate,
       type: insertActivity.type,
       status: insertActivity.status || "confirmed",
+      category: insertActivity.category || null,
+      location: insertActivity.location || null,
+      region: insertActivity.region || null,
+      notificationEnabled: insertActivity.notificationEnabled !== undefined ? insertActivity.notificationEnabled : true,
       userId: insertActivity.userId || null
     };
     this.activitiesMap.set(id, activity);
@@ -365,11 +435,12 @@ export class MemStorage implements IStorage {
     }
     
     // Also delete related notifications
-    for (const [notifId, notification] of this.notificationsMap.entries()) {
+    // Use Array.from to avoid MapIterator issues
+    Array.from(this.notificationsMap.entries()).forEach(([notifId, notification]) => {
       if (notification.activityId === id) {
         this.notificationsMap.delete(notifId);
       }
-    }
+    });
   }
   
   // Notification methods

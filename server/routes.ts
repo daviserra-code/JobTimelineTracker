@@ -10,11 +10,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Activities Routes
   
-  // Get all activities
+  // Get all activities with optional filtering
   app.get("/api/activities", async (req, res) => {
     try {
+      const { 
+        search, 
+        types, 
+        statuses, 
+        startDate, 
+        endDate,
+        category,
+        location
+      } = req.query;
+      
+      // Get all activities first
       const activities = await storage.getAllActivities();
-      res.json(activities);
+      
+      // Apply filters if any are present
+      let filteredActivities = activities;
+      
+      // Text search filter (searches in title, description, category, location)
+      if (search && typeof search === 'string') {
+        const searchLower = search.toLowerCase();
+        filteredActivities = filteredActivities.filter(activity => 
+          activity.title.toLowerCase().includes(searchLower) || 
+          (activity.description && activity.description.toLowerCase().includes(searchLower)) ||
+          (activity.category && activity.category.toLowerCase().includes(searchLower)) ||
+          (activity.location && activity.location.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Types filter
+      if (types && typeof types === 'string') {
+        const typesList = types.split(',');
+        filteredActivities = filteredActivities.filter(activity => 
+          typesList.includes(activity.type)
+        );
+      }
+      
+      // Statuses filter
+      if (statuses && typeof statuses === 'string') {
+        const statusesList = statuses.split(',');
+        filteredActivities = filteredActivities.filter(activity => 
+          statusesList.includes(activity.status)
+        );
+      }
+      
+      // Date range filter
+      if (startDate && typeof startDate === 'string') {
+        const startDateObj = new Date(startDate);
+        filteredActivities = filteredActivities.filter(activity => 
+          new Date(activity.startDate) >= startDateObj
+        );
+      }
+      
+      if (endDate && typeof endDate === 'string') {
+        const endDateObj = new Date(endDate);
+        filteredActivities = filteredActivities.filter(activity => 
+          new Date(activity.endDate) <= endDateObj
+        );
+      }
+      
+      // Category filter
+      if (category && typeof category === 'string') {
+        filteredActivities = filteredActivities.filter(activity => 
+          activity.category === category
+        );
+      }
+      
+      // Location filter
+      if (location && typeof location === 'string') {
+        filteredActivities = filteredActivities.filter(activity => 
+          activity.location === location
+        );
+      }
+      
+      res.json(filteredActivities);
     } catch (error) {
       res.status(500).json({ message: `Error fetching activities: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }

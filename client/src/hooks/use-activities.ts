@@ -1,16 +1,68 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { Activity, InsertActivity } from "@shared/schema";
+import { Activity, InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { ActivityFilters } from "@/components/activity-filters";
 
-export function useActivities() {
+interface UseActivitiesProps {
+  filters?: ActivityFilters;
+}
+
+export function useActivities(props?: UseActivitiesProps) {
   const { toast } = useToast();
+  const filters = props?.filters;
   
-  // Get all activities
+  // Create query parameters from filters
+  const queryParams = useMemo(() => {
+    if (!filters) return '';
+    
+    const params = new URLSearchParams();
+    
+    if (filters.searchQuery) {
+      params.append('search', filters.searchQuery);
+    }
+    
+    if (filters.types.length > 0) {
+      params.append('types', filters.types.join(','));
+    }
+    
+    if (filters.statuses.length > 0) {
+      params.append('statuses', filters.statuses.join(','));
+    }
+    
+    if (filters.dateRange?.from) {
+      params.append('startDate', format(filters.dateRange.from, 'yyyy-MM-dd'));
+    }
+    
+    if (filters.dateRange?.to) {
+      params.append('endDate', format(filters.dateRange.to, 'yyyy-MM-dd'));
+    }
+    
+    if (filters.category) {
+      params.append('category', filters.category);
+    }
+    
+    if (filters.location) {
+      params.append('location', filters.location);
+    }
+    
+    return `?${params.toString()}`;
+  }, [filters]);
+  
+  // Get all activities with optional filtering
   const { data: activities, isLoading, error } = useQuery<Activity[]>({
-    queryKey: ['/api/activities'],
+    queryKey: ['/api/activities', queryParams],
+    queryFn: async () => {
+      const response = await fetch(`/api/activities${queryParams}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch activities: ${response.statusText}`);
+      }
+      return response.json();
+    },
   });
   
   // Create a new activity

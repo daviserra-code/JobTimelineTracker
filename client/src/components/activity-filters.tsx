@@ -28,6 +28,8 @@ export type ActivityFilters = {
   types: ActivityType[];
   statuses: ActivityStatus[];
   dateRange: DateRange | undefined;
+  category?: string;
+  location?: string;
 };
 
 const defaultFilters: ActivityFilters = {
@@ -50,7 +52,9 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
   const hasActiveFilters = appliedFilters.searchQuery || 
     appliedFilters.types.length > 0 || 
     appliedFilters.statuses.length > 0 || 
-    appliedFilters.dateRange;
+    appliedFilters.dateRange ||
+    appliedFilters.category ||
+    appliedFilters.location;
   
   const handleTypeToggle = (type: ActivityType) => {
     setFilters(prev => {
@@ -101,7 +105,9 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
   const activeFilterCount = [
     appliedFilters.types.length > 0,
     appliedFilters.statuses.length > 0,
-    appliedFilters.dateRange !== undefined
+    appliedFilters.dateRange !== undefined,
+    appliedFilters.category !== undefined && appliedFilters.category !== "",
+    appliedFilters.location !== undefined && appliedFilters.location !== ""
   ].filter(Boolean).length;
   
   return (
@@ -189,6 +195,24 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
                     </div>
                   ))}
                 </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Category</h3>
+                <Input
+                  placeholder="Filter by category"
+                  value={filters.category || ""}
+                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Location</h3>
+                <Input
+                  placeholder="Filter by location"
+                  value={filters.location || ""}
+                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                />
               </div>
               
               <div className="space-y-4">
@@ -314,6 +338,40 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
               <button 
                 onClick={() => {
                   const newFilters = { ...appliedFilters, dateRange: undefined };
+                  setAppliedFilters(newFilters);
+                  setFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+                className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          
+          {appliedFilters.category && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Category: {appliedFilters.category}
+              <button 
+                onClick={() => {
+                  const newFilters = { ...appliedFilters, category: undefined };
+                  setAppliedFilters(newFilters);
+                  setFilters(newFilters);
+                  onFilterChange(newFilters);
+                }}
+                className="ml-1 rounded-full hover:bg-muted-foreground/20 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          
+          {appliedFilters.location && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Location: {appliedFilters.location}
+              <button 
+                onClick={() => {
+                  const newFilters = { ...appliedFilters, location: undefined };
                   setAppliedFilters(newFilters);
                   setFilters(newFilters);
                   onFilterChange(newFilters);
