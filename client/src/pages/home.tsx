@@ -14,6 +14,7 @@ import CalendarControls from "@/components/calendar-controls";
 import NotificationsPanel from "@/components/notifications-panel";
 import ImportExportDialog from "@/components/import-export-dialog";
 import ActivityForm from "@/components/activity-form";
+import DeleteActivityDialog from "@/components/delete-activity-dialog";
 import { ActivityFilters } from "@/components/activity-filters";
 import type { ActivityFilters as ActivityFiltersType } from "@/components/activity-filters";
 import MobileNav from "@/components/mobile-nav";
@@ -32,6 +33,7 @@ export default function Home() {
   const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<ActivityFiltersType | null>(null);
   
   // Get activities and holidays data with optional filtering
@@ -112,6 +114,18 @@ export default function Home() {
     setIsEditActivityOpen(true);
   };
 
+  const handleActivityContextMenu = (event: React.MouseEvent, activity: Activity) => {
+    // Skip handling for holiday activities which are not editable
+    if (activity.type === "holiday") return;
+    
+    // Prevent the default context menu
+    event.preventDefault();
+    
+    // Set the selected activity for deletion
+    setSelectedActivity(activity);
+    setIsDeleteDialogOpen(true);
+  };
+
   return (
     <>
       <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6 tour-home">
@@ -155,6 +169,7 @@ export default function Home() {
               onZoomIn={handleZoomIn}
               onZoomOut={handleZoomOut}
               onActivityClick={handleActivityClick}
+              onActivityContextMenu={handleActivityContextMenu}
             />
           </div>
         )}
@@ -208,15 +223,30 @@ export default function Home() {
         />
         
         {selectedActivity && (
-          <ActivityForm
-            open={isEditActivityOpen}
-            onOpenChange={(open) => {
-              setIsEditActivityOpen(open);
-              if (!open) setSelectedActivity(null);
-            }}
-            initialData={selectedActivity}
-            actionType="edit"
-          />
+          <>
+            <ActivityForm
+              open={isEditActivityOpen}
+              onOpenChange={(open) => {
+                setIsEditActivityOpen(open);
+                if (!open && !isDeleteDialogOpen) {
+                  setSelectedActivity(null);
+                }
+              }}
+              initialData={selectedActivity}
+              actionType="edit"
+            />
+            
+            <DeleteActivityDialog 
+              activity={selectedActivity}
+              open={isDeleteDialogOpen}
+              onOpenChange={(open) => {
+                setIsDeleteDialogOpen(open);
+                if (!open && !isEditActivityOpen) {
+                  setSelectedActivity(null);
+                }
+              }}
+            />
+          </>
         )}
       </main>
       

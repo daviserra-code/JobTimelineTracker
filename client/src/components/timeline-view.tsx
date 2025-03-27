@@ -25,9 +25,10 @@ interface TimelineActivityRowProps {
   activities: Activity[];
   year: number;
   onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
-function TimelineActivityRow({ title, activities, year, onActivityClick }: TimelineActivityRowProps) {
+function TimelineActivityRow({ title, activities, year, onActivityClick, onActivityContextMenu }: TimelineActivityRowProps) {
   const periodStart = new Date(year, 0, 1);
   const periodEnd = new Date(year, 11, 31);
   
@@ -98,6 +99,8 @@ function TimelineActivityRow({ title, activities, year, onActivityClick }: Timel
               onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
               onMouseLeave={handleActivityMouseLeave}
               onClick={() => onActivityClick && onActivityClick(activity)}
+              onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+              title={`${activity.title} (Right-click to delete)`}
             >
               <span className="truncate">{activity.title}</span>
             </div>
@@ -130,6 +133,7 @@ interface TimelineViewProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
 export default function TimelineView({ 
@@ -139,7 +143,8 @@ export default function TimelineView({
   zoomLevel,
   onZoomIn,
   onZoomOut,
-  onActivityClick
+  onActivityClick,
+  onActivityContextMenu
 }: TimelineViewProps) {
   // Group activities by type for display
   const projectActivities = activities.filter(a => a.type === 'project');
@@ -183,7 +188,8 @@ export default function TimelineView({
                 title="Projects" 
                 activities={projectActivities} 
                 year={year}
-                onActivityClick={onActivityClick} 
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
               />
             )}
             
@@ -192,7 +198,8 @@ export default function TimelineView({
                 title="Meetings" 
                 activities={meetingActivities} 
                 year={year}
-                onActivityClick={onActivityClick} 
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
               />
             )}
             
@@ -201,7 +208,8 @@ export default function TimelineView({
                 title="Confirmed Activities" 
                 activities={confirmedActivities} 
                 year={year}
-                onActivityClick={onActivityClick} 
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
               />
             )}
             
@@ -210,7 +218,8 @@ export default function TimelineView({
                 title="Tentative Activities" 
                 activities={tentativeActivities} 
                 year={year}
-                onActivityClick={onActivityClick} 
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
               />
             )}
             
@@ -219,7 +228,8 @@ export default function TimelineView({
                 title="Hypothetical Activities" 
                 activities={hypotheticalActivities} 
                 year={year}
-                onActivityClick={onActivityClick} 
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
               />
             )}
             
@@ -228,7 +238,8 @@ export default function TimelineView({
                 title="Holidays" 
                 activities={holidayActivities} 
                 year={year}
-                onActivityClick={onActivityClick} 
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
               />
             )}
             
