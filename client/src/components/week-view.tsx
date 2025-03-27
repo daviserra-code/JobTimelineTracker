@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays } from "date-fns";
 import { Activity, Holiday } from "@shared/schema";
-import { ACTIVITY_TYPES, DAYS_OF_WEEK } from "@/lib/constants";
+import { ACTIVITY_TYPES } from "@/lib/constants";
 import { getContrastTextColor } from "@/lib/utils";
 
 interface WeekViewProps {
@@ -11,6 +11,7 @@ interface WeekViewProps {
   month: number;
   weekNumber: number; // 1-5 representing the week of the month
   onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
 export default function WeekView({ 
@@ -19,7 +20,8 @@ export default function WeekView({
   year,
   month,
   weekNumber,
-  onActivityClick 
+  onActivityClick,
+  onActivityContextMenu
 }: WeekViewProps) {
   // Calculate the week's start and end date
   const monthStart = new Date(year, month, 1);
@@ -74,9 +76,9 @@ export default function WeekView({
   // Group activities by activity type
   const projectActivities = visibleActivities.filter(a => a.type === 'project');
   const meetingActivities = visibleActivities.filter(a => a.type === 'meeting');
-  const confirmedActivities = visibleActivities.filter(a => a.type === 'confirmed');
-  const tentativeActivities = visibleActivities.filter(a => a.type === 'tentative');
-  const hypotheticalActivities = visibleActivities.filter(a => a.type === 'hypothetical');
+  const confirmedActivities = visibleActivities.filter(a => a.status === 'confirmed');
+  const tentativeActivities = visibleActivities.filter(a => a.status === 'tentative');
+  const hypotheticalActivities = visibleActivities.filter(a => a.status === 'hypothetical');
   const holidayActivities = visibleActivities.filter(a => a.type === 'holiday');
   
   return (
@@ -92,16 +94,16 @@ export default function WeekView({
             {daysInWeek.map((day) => (
               <div 
                 key={format(day, "yyyy-MM-dd")} 
-                className="day-column text-center py-2 font-medium border-r last:border-r-0"
+                className="day-column text-center py-2 font-medium text-sm border-r last:border-r-0"
                 style={{ width: "100px", minWidth: "100px" }}
               >
-                <div>{DAYS_OF_WEEK[day.getDay()]}</div>
-                <div className="text-xs text-gray-500">{format(day, "MMM d")}</div>
+                <div>{format(day, "d")}</div>
+                <div className="text-xs text-gray-500">{format(day, "EEE")}</div>
               </div>
             ))}
           </div>
           
-          {/* Activity rows by type with hour granularity */}
+          {/* Activity rows by type */}
           <div className="activity-rows">
             {projectActivities.length > 0 && (
               <div className="activity-row border-b py-3">
@@ -119,18 +121,16 @@ export default function WeekView({
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
-                    // Calculate position and width based on days in view
                     const startDay = Math.max(
                       0,
                       Math.floor((activityStart.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000))
                     );
                     
                     const endDay = Math.min(
-                      6, // 7 days in a week, 0-indexed
+                      6,
                       Math.floor((activityEnd.getTime() - weekStart.getTime()) / (24 * 60 * 60 * 1000))
                     );
                     
-                    // The width of each day cell is 100px
                     const width = (endDay - startDay + 1) * 100;
                     const left = startDay * 100;
                     
@@ -150,6 +150,8 @@ export default function WeekView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -204,6 +206,8 @@ export default function WeekView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -258,6 +262,8 @@ export default function WeekView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -312,6 +318,8 @@ export default function WeekView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -366,6 +374,8 @@ export default function WeekView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -420,6 +430,8 @@ export default function WeekView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -431,29 +443,29 @@ export default function WeekView({
             
             {/* If there are no activities, show empty state */}
             {visibleActivities.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+              <div className="flex flex-col items-center justify-center h-[200px] text-gray-500">
                 <span className="material-icons text-4xl mb-2">event_busy</span>
                 <p>No activities for this week</p>
-                <p className="text-sm mt-1">Add activities to see them on the timeline</p>
               </div>
             )}
           </div>
+          
+          {/* Tooltip */}
+          {isTooltipVisible && (
+            <div
+              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
+              style={{
+                left: `${tooltipPosition.x}px`,
+                top: `${tooltipPosition.y}px`,
+                transform: 'translate(-50%, -100%)'
+              }}
+            >
+              {tooltipContent}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+            </div>
+          )}
         </div>
       </div>
-      
-      {isTooltipVisible && (
-        <div
-          className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
-          style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-        >
-          {tooltipContent}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-        </div>
-      )}
     </div>
   );
 }

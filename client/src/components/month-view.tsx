@@ -10,6 +10,7 @@ interface MonthViewProps {
   year: number;
   month: number;
   onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
 export default function MonthView({ 
@@ -17,7 +18,8 @@ export default function MonthView({
   holidays, 
   year,
   month,
-  onActivityClick 
+  onActivityClick,
+  onActivityContextMenu
 }: MonthViewProps) {
   // Get all days in the month - now using useMemo to avoid recreation on every render
   const { monthStart, monthEnd, daysInMonth, visibleActivities } = useMemo(() => {
@@ -142,6 +144,8 @@ export default function MonthView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -197,6 +201,8 @@ export default function MonthView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -252,6 +258,8 @@ export default function MonthView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -307,6 +315,8 @@ export default function MonthView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -362,6 +372,8 @@ export default function MonthView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -417,6 +429,8 @@ export default function MonthView({
                         onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                         onMouseLeave={handleActivityMouseLeave}
                         onClick={() => onActivityClick && onActivityClick(activity)}
+                        onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
+                        title={`${activity.title} (Right-click to delete)`}
                       >
                         <span className="truncate">{activity.title}</span>
                       </div>
@@ -428,29 +442,29 @@ export default function MonthView({
             
             {/* If there are no activities, show empty state */}
             {visibleActivities.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
+              <div className="flex flex-col items-center justify-center h-[200px] text-gray-500">
                 <span className="material-icons text-4xl mb-2">event_busy</span>
                 <p>No activities for {format(monthStart, "MMMM yyyy")}</p>
-                <p className="text-sm mt-1">Add activities to see them on the timeline</p>
               </div>
             )}
           </div>
+          
+          {/* Tooltip */}
+          {isTooltipVisible && (
+            <div
+              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
+              style={{
+                left: `${tooltipPosition.x}px`,
+                top: `${tooltipPosition.y}px`,
+                transform: 'translate(-50%, -100%)'
+              }}
+            >
+              {tooltipContent}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+            </div>
+          )}
         </div>
       </div>
-      
-      {isTooltipVisible && (
-        <div
-          className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
-          style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-        >
-          {tooltipContent}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-        </div>
-      )}
     </div>
   );
 }

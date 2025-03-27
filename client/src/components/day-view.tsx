@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { format, startOfDay, endOfDay, eachHourOfInterval } from "date-fns";
+import { useState, useEffect, useMemo } from "react";
+import { format, eachHourOfInterval, startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { Activity, Holiday } from "@shared/schema";
 import { ACTIVITY_TYPES } from "@/lib/constants";
 import { getContrastTextColor } from "@/lib/utils";
@@ -11,6 +11,7 @@ interface DayViewProps {
   month: number;
   day: number;
   onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
 export default function DayView({ 
@@ -19,19 +20,22 @@ export default function DayView({
   year,
   month,
   day,
-  onActivityClick 
+  onActivityClick,
+  onActivityContextMenu
 }: DayViewProps) {
-  // Using useMemo to avoid recreation on every render
-  const { dayDate, dayStart, dayEnd, hours, visibleActivities, isHoliday, holidayInfo } = useMemo(() => {
-    const dayDate = new Date(year, month, day);
-    const dayStart = startOfDay(dayDate);
-    const dayEnd = endOfDay(dayDate);
-    
-    // Generate hours for the day
-    const hours = eachHourOfInterval({ start: dayStart, end: dayEnd });
-    
-    // Filter activities that overlap with the day
-    const visibleActivities = activities.filter(activity => {
+  // Day date
+  const dayDate = new Date(year, month, day);
+  const dayStart = startOfDay(dayDate);
+  const dayEnd = endOfDay(dayDate);
+  
+  // Generate hours for the day
+  const hours = eachHourOfInterval({ start: dayStart, end: dayEnd });
+  
+  // Filter activities that overlap with the day
+  const [visibleActivities, setVisibleActivities] = useState<Activity[]>([]);
+  
+  useEffect(() => {
+    const filtered = activities.filter(activity => {
       const activityStart = new Date(activity.startDate);
       const activityEnd = new Date(activity.endDate);
       
@@ -40,23 +44,19 @@ export default function DayView({
       );
     });
     
-    // Check if the current day is a holiday
-    const isHoliday = holidays.some(holiday => {
-      const holidayDate = new Date(holiday.date);
-      return holidayDate.getFullYear() === year &&
-             holidayDate.getMonth() === month &&
-             holidayDate.getDate() === day;
-    });
-    
-    const holidayInfo = holidays.find(holiday => {
-      const holidayDate = new Date(holiday.date);
-      return holidayDate.getFullYear() === year &&
-             holidayDate.getMonth() === month &&
-             holidayDate.getDate() === day;
-    });
-    
-    return { dayDate, dayStart, dayEnd, hours, visibleActivities, isHoliday, holidayInfo };
-  }, [year, month, day, activities, holidays]);
+    setVisibleActivities(filtered);
+  }, [activities, dayStart, dayEnd]);
+  
+  // Check if this day is a holiday
+  const holiday = useMemo(() => 
+    holidays.find(h => 
+      format(new Date(h.date), 'yyyy-MM-dd') === format(dayDate, 'yyyy-MM-dd')
+    ),
+    [holidays, dayDate]
+  );
+  
+  const isHoliday = !!holiday;
+  const holidayInfo = holiday;
   
   const [tooltipContent, setTooltipContent] = useState("");
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -66,7 +66,10 @@ export default function DayView({
     const activityStart = new Date(activity.startDate);
     const activityEnd = new Date(activity.endDate);
     
-    const content = `${activity.title} (${ACTIVITY_TYPES[activity.type as keyof typeof ACTIVITY_TYPES].label}) - ${format(activityStart, "MMM d, yyyy")} to ${format(activityEnd, "MMM d, yyyy")}`;
+    const type = activity.type as keyof typeof ACTIVITY_TYPES;
+    const { label } = ACTIVITY_TYPES[type];
+    
+    const content = `${activity.title} (${label}) - ${format(activityStart, "h:mm a")} to ${format(activityEnd, "h:mm a")}`;
     
     setTooltipContent(content);
     
@@ -84,7 +87,7 @@ export default function DayView({
     setIsTooltipVisible(false);
   };
   
-  // Group activities by activity type and status
+  // Group activities by type (for legends and filtering)
   const projectActivities = useMemo(() => 
     visibleActivities.filter((a: Activity) => a.type === 'project'),
     [visibleActivities]
@@ -144,41 +147,36 @@ export default function DayView({
                 const activityStart = new Date(activity.startDate);
                 const activityEnd = new Date(activity.endDate);
                 
-                const hourStart = hour;
-                const hourEnd = new Date(hour);
-                hourEnd.setHours(hourEnd.getHours() + 1);
-                
-                return (activityStart < hourEnd && activityEnd >= hourStart);
+                return isWithinInterval(hour, { start: activityStart, end: activityEnd }) ||
+                       (format(activityStart, 'HH') === format(hour, 'HH') && format(activityStart, 'yyyy-MM-dd') === format(hour, 'yyyy-MM-dd'));
               });
               
               return (
-                <div 
-                  key={format(hour, "HH:mm")} 
-                  className={`flex border-b py-2 ${index % 2 === 0 ? 'bg-gray-50' : ''}`}
-                >
-                  <div className="w-24 text-sm border-r pr-2 text-right">
+                <div key={index} className="flex border-b last:border-b-0 hover:bg-gray-50">
+                  <div className="w-24 py-2 text-sm border-r text-gray-500">
                     {format(hour, "h:mm a")}
                   </div>
-                  
-                  <div className="flex-1 relative min-h-[30px] pl-2">
+                  <div className="flex-1 py-2 relative min-h-[3rem]">
+                    {hourActivities.length === 0 && (
+                      <div className="text-gray-300 text-sm italic">No activities</div>
+                    )}
+                    
                     {hourActivities.map((activity: Activity, activityIndex: number) => {
                       const type = activity.type as keyof typeof ACTIVITY_TYPES;
                       const { color } = ACTIVITY_TYPES[type];
                       const textColor = getContrastTextColor(color);
                       
                       return (
-                        <div
-                          key={activity.id}
-                          className={`m-1 ${color} rounded-md px-3 py-1 ${textColor} text-xs flex items-center cursor-pointer`}
-                          style={{ 
-                            marginTop: `${activityIndex * 26}px`,
-                            zIndex: 10 
-                          }}
+                        <div 
+                          key={`${activity.id}-${activityIndex}`}
+                          className={`${color} rounded px-3 py-1 mb-1 last:mb-0 ${textColor} text-sm truncate cursor-pointer`}
+                          onClick={() => onActivityClick && onActivityClick(activity)}
+                          onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
                           onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
                           onMouseLeave={handleActivityMouseLeave}
-                          onClick={() => onActivityClick && onActivityClick(activity)}
+                          title={`${activity.title} (Right-click to delete)`}
                         >
-                          <span className="truncate">{activity.title}</span>
+                          {activity.title}
                         </div>
                       );
                     })}
@@ -186,32 +184,32 @@ export default function DayView({
                 </div>
               );
             })}
-            
-            {/* If there are no activities, show empty state */}
-            {visibleActivities.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
-                <span className="material-icons text-4xl mb-2">event_busy</span>
-                <p>No activities for {format(dayDate, "MMMM d, yyyy")}</p>
-                <p className="text-sm mt-1">Add activities to see them on the timeline</p>
-              </div>
-            )}
           </div>
+          
+          {/* No activities state */}
+          {visibleActivities.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-[200px] text-gray-500 mt-4">
+              <span className="material-icons text-4xl mb-2">event_busy</span>
+              <p>No activities for {format(dayDate, "MMMM d, yyyy")}</p>
+            </div>
+          )}
+          
+          {/* Tooltip */}
+          {isTooltipVisible && (
+            <div
+              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
+              style={{
+                left: `${tooltipPosition.x}px`,
+                top: `${tooltipPosition.y}px`,
+                transform: 'translate(-50%, -100%)'
+              }}
+            >
+              {tooltipContent}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+            </div>
+          )}
         </div>
       </div>
-      
-      {isTooltipVisible && (
-        <div
-          className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
-          style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-        >
-          {tooltipContent}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-        </div>
-      )}
     </div>
   );
 }

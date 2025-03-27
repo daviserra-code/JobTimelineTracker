@@ -181,6 +181,7 @@ export default function Home() {
             year={currentYear}
             month={currentMonth}
             onActivityClick={handleActivityClick}
+            onActivityContextMenu={handleActivityContextMenu}
           />
         )}
         
@@ -192,6 +193,7 @@ export default function Home() {
             month={currentMonth}
             weekNumber={currentWeek}
             onActivityClick={handleActivityClick}
+            onActivityContextMenu={handleActivityContextMenu}
           />
         )}
         
@@ -203,6 +205,7 @@ export default function Home() {
             month={currentMonth}
             day={currentDay}
             onActivityClick={handleActivityClick}
+            onActivityContextMenu={handleActivityContextMenu}
           />
         )}
         
