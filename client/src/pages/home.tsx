@@ -14,6 +14,7 @@ import CalendarControls from "@/components/calendar-controls";
 import NotificationsPanel from "@/components/notifications-panel";
 import ImportExportDialog from "@/components/import-export-dialog";
 import ActivityForm from "@/components/activity-form";
+import { ActivityFilters } from "@/components/activity-filters";
 
 export default function Home() {
   const isMobile = useMobile();
@@ -107,34 +108,49 @@ export default function Home() {
   };
 
   return (
-    <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6">
-      <CalendarControls
-        currentYear={currentYear}
-        currentMonth={currentMonth}
-        currentWeek={currentWeek}
-        currentDay={currentDay}
-        currentViewMode={viewMode}
-        onYearChange={changeYear}
-        onMonthChange={changeMonth}
-        onWeekChange={changeWeek}
-        onDayChange={changeDay}
-        onViewModeChange={setViewMode}
-        onOpenAddActivity={() => setIsAddActivityOpen(true)}
-        onOpenImportExport={openImportExportDialog}
-      />
+    <main className="flex-grow container mx-auto px-4 py-6 mb-16 md:mb-6 tour-home">
+      <div className="tour-calendar-controls">
+        <CalendarControls
+          currentYear={currentYear}
+          currentMonth={currentMonth}
+          currentWeek={currentWeek}
+          currentDay={currentDay}
+          currentViewMode={viewMode}
+          onYearChange={changeYear}
+          onMonthChange={changeMonth}
+          onWeekChange={changeWeek}
+          onDayChange={changeDay}
+          onViewModeChange={setViewMode}
+          onOpenAddActivity={() => setIsAddActivityOpen(true)}
+          onOpenImportExport={openImportExportDialog}
+        />
+      </div>
       
-      <ActivityLegend />
+      <div className="mt-4 mb-6 tour-filters">
+        <ActivityFilters
+          onFilterChange={(filters) => {
+            console.log("Filters applied:", filters);
+            // TODO: Implement filtering logic here
+          }}
+        />
+      </div>
+      
+      <div className="tour-legend">
+        <ActivityLegend />
+      </div>
       
       {viewMode === "timeline" && (
-        <TimelineView
-          activities={activitiesLoading ? [] : currentYearActivities}
-          holidays={holidaysLoading ? [] : holidays}
-          year={currentYear}
-          zoomLevel={zoomLevel}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onActivityClick={handleActivityClick}
-        />
+        <div className="tour-timeline">
+          <TimelineView
+            activities={activitiesLoading ? [] : currentYearActivities}
+            holidays={holidaysLoading ? [] : holidays}
+            year={currentYear}
+            zoomLevel={zoomLevel}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onActivityClick={handleActivityClick}
+          />
+        </div>
       )}
       
       {viewMode === "month" && (
@@ -169,7 +185,9 @@ export default function Home() {
         />
       )}
       
-      <NotificationsPanel />
+      <div className="tour-notifications">
+        <NotificationsPanel />
+      </div>
       
       <ImportExportDialog
         open={isImportExportOpen}

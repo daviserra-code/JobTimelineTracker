@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { CalendarDays, Bell, Download, User, Menu, HelpCircle } from "lucide-react";
+import HelpMenu from "@/components/help-menu";
 
 export default function Header() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -16,27 +18,31 @@ export default function Header() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <button onClick={toggleDrawer} className="mr-2 md:hidden">
-                <span className="material-icons">menu</span>
+                <Menu className="h-6 w-6" />
               </button>
-              <h1 className="text-xl font-medium">JobTrack</h1>
+              <h1 className="text-xl font-medium">Activity Calendar</h1>
             </div>
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
-                <span className="material-icons mr-1">today</span>
+                <CalendarDays className="mr-2 h-4 w-4" />
                 <span>Today</span>
               </Button>
-              <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
-                <span className="material-icons mr-1">notifications</span>
+              <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)] tour-notifications">
+                <Bell className="mr-2 h-4 w-4" />
                 <span>Notifications</span>
               </Button>
               <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
-                <span className="material-icons mr-1">download</span>
+                <Download className="mr-2 h-4 w-4" />
                 <span>Import/Export</span>
               </Button>
               <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
-                <span className="material-icons mr-1">account_circle</span>
+                <User className="mr-2 h-4 w-4" />
                 <span>Account</span>
               </Button>
+              
+              <div className="ml-2 text-white">
+                <HelpMenu />
+              </div>
             </div>
           </div>
         </div>
@@ -53,14 +59,14 @@ export default function Header() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b">
-              <h2 className="text-lg font-medium text-primary">JobTrack</h2>
+              <h2 className="text-lg font-medium text-primary">Activity Calendar</h2>
             </div>
             <nav className="p-4">
               <ul className="space-y-2">
                 <li>
                   <Link href="/">
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <span className="material-icons mr-3 text-gray-600">today</span>
+                      <CalendarDays className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Today</span>
                     </a>
                   </Link>
@@ -68,7 +74,7 @@ export default function Header() {
                 <li>
                   <Link href="/">
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <span className="material-icons mr-3 text-gray-600">notifications</span>
+                      <Bell className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Notifications</span>
                     </a>
                   </Link>
@@ -76,7 +82,7 @@ export default function Header() {
                 <li>
                   <Link href="/">
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <span className="material-icons mr-3 text-gray-600">download</span>
+                      <Download className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Import/Export</span>
                     </a>
                   </Link>
@@ -84,7 +90,7 @@ export default function Header() {
                 <li>
                   <Link href="/">
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <span className="material-icons mr-3 text-gray-600">account_circle</span>
+                      <User className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Account</span>
                     </a>
                   </Link>
@@ -92,8 +98,8 @@ export default function Header() {
                 <li className="pt-4 border-t mt-4">
                   <Link href="/">
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <span className="material-icons mr-3 text-gray-600">settings</span>
-                      <span>Settings</span>
+                      <HelpCircle className="mr-3 h-5 w-5 text-gray-600" />
+                      <span>Help & Support</span>
                     </a>
                   </Link>
                 </li>

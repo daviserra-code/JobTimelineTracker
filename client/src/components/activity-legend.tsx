@@ -3,7 +3,7 @@ import { ActivityType, ActivityStatus } from "@shared/schema";
 
 export default function ActivityLegend() {
   return (
-    <div className="bg-white border-b">
+    <div className="bg-white border-b tour-legend">
       <div className="container mx-auto px-4 py-2">
         <div className="flex flex-col md:flex-row md:items-center gap-3 text-sm">
           <div className="flex flex-wrap items-center">

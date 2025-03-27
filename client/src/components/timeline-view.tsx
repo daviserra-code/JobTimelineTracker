@@ -150,7 +150,7 @@ export default function TimelineView({
   const hypotheticalActivities = activities.filter(a => a.type === 'hypothetical');
   
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6 tour-timeline">
       <div className="border-b px-4 py-3 flex justify-between items-center">
         <h2 className="text-lg font-medium">Timeline View ({year})</h2>
         <div className="flex space-x-2">

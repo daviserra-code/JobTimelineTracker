@@ -124,20 +124,22 @@ export default function CalendarControls({
   };
   
   return (
-    <div className="bg-white border-b">
+    <div className="bg-white border-b tour-calendar-controls">
       <div className="container mx-auto px-4 py-3">
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex items-center space-x-4 mb-2 md:mb-0">
-            <Select value={currentViewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Select view" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(VIEW_MODES).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="tour-view-modes">
+              <Select value={currentViewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(VIEW_MODES).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="flex items-center space-x-2">
               <Button 
@@ -168,10 +170,12 @@ export default function CalendarControls({
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" className="hidden md:flex items-center">
-              <span className="material-icons text-sm mr-1">filter_list</span>
-              Filter
-            </Button>
+            <div className="tour-filters">
+              <Button variant="outline" className="hidden md:flex items-center">
+                <span className="material-icons text-sm mr-1">filter_list</span>
+                Filter
+              </Button>
+            </div>
             
             <div className="relative">
               <Button 
@@ -184,13 +188,15 @@ export default function CalendarControls({
               </Button>
             </div>
             
-            <Button 
-              onClick={onOpenAddActivity}
-              className="rounded-full bg-primary text-white p-3 md:px-4 md:py-2 flex items-center shadow-md hover:bg-opacity-90"
-            >
-              <span className="material-icons md:mr-1">add</span>
-              <span className="hidden md:inline">Add Activity</span>
-            </Button>
+            <div className="tour-add-activity">
+              <Button 
+                onClick={onOpenAddActivity}
+                className="rounded-full bg-primary text-white p-3 md:px-4 md:py-2 flex items-center shadow-md hover:bg-opacity-90"
+              >
+                <span className="material-icons md:mr-1">add</span>
+                <span className="hidden md:inline">Add Activity</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
