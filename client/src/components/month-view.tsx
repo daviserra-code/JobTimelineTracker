@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { Activity, Holiday } from "@shared/schema";
 import { ACTIVITY_TYPES, DAYS_OF_WEEK } from "@/lib/constants";
@@ -19,16 +19,14 @@ export default function MonthView({
   month,
   onActivityClick 
 }: MonthViewProps) {
-  // Get all days in the month
-  const monthStart = startOfMonth(new Date(year, month, 1));
-  const monthEnd = endOfMonth(monthStart);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  
-  // Filter activities that overlap with the month
-  const [visibleActivities, setVisibleActivities] = useState<Activity[]>([]);
-  
-  useEffect(() => {
-    const filtered = activities.filter(activity => {
+  // Get all days in the month - now using useMemo to avoid recreation on every render
+  const { monthStart, monthEnd, daysInMonth, visibleActivities } = useMemo(() => {
+    const monthStart = startOfMonth(new Date(year, month, 1));
+    const monthEnd = endOfMonth(monthStart);
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    // Filter activities that overlap with the month
+    const visibleActivities = activities.filter(activity => {
       const activityStart = new Date(activity.startDate);
       const activityEnd = new Date(activity.endDate);
       
@@ -37,8 +35,8 @@ export default function MonthView({
       );
     });
     
-    setVisibleActivities(filtered);
-  }, [activities, monthStart, monthEnd]);
+    return { monthStart, monthEnd, daysInMonth, visibleActivities };
+  }, [year, month, activities]);
   
   const [tooltipContent, setTooltipContent] = useState("");
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -67,12 +65,12 @@ export default function MonthView({
   };
   
   // Group activities by activity type
-  const projectActivities = visibleActivities.filter(a => a.type === 'project');
-  const meetingActivities = visibleActivities.filter(a => a.type === 'meeting');
-  const confirmedActivities = visibleActivities.filter(a => a.type === 'confirmed');
-  const tentativeActivities = visibleActivities.filter(a => a.type === 'tentative');
-  const hypotheticalActivities = visibleActivities.filter(a => a.type === 'hypothetical');
-  const holidayActivities = visibleActivities.filter(a => a.type === 'holiday');
+  const projectActivities = visibleActivities.filter((a: Activity) => a.type === 'project');
+  const meetingActivities = visibleActivities.filter((a: Activity) => a.type === 'meeting');
+  const confirmedActivities = visibleActivities.filter((a: Activity) => a.status === 'confirmed');
+  const tentativeActivities = visibleActivities.filter((a: Activity) => a.status === 'tentative');
+  const hypotheticalActivities = visibleActivities.filter((a: Activity) => a.status === 'hypothetical');
+  const holidayActivities = visibleActivities.filter((a: Activity) => a.type === 'holiday');
   
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
@@ -84,7 +82,7 @@ export default function MonthView({
         <div className="min-w-max p-4">
           {/* Days of month header */}
           <div className="flex border-b">
-            {daysInMonth.map((day) => (
+            {daysInMonth.map((day: Date) => (
               <div 
                 key={format(day, "yyyy-MM-dd")} 
                 className="day-column text-center py-2 font-medium text-sm border-r last:border-r-0"
@@ -102,7 +100,7 @@ export default function MonthView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Projects</div>
                 <div className="relative h-6 flex">
-                  {daysInMonth.map((day) => (
+                  {daysInMonth.map((day: Date) => (
                     <div 
                       key={format(day, "yyyy-MM-dd")} 
                       className="day-cell border-r last:border-r-0"
@@ -110,7 +108,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {projectActivities.map((activity) => {
+                  {projectActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
@@ -157,7 +155,7 @@ export default function MonthView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Meetings</div>
                 <div className="relative h-6 flex">
-                  {daysInMonth.map((day) => (
+                  {daysInMonth.map((day: Date) => (
                     <div 
                       key={format(day, "yyyy-MM-dd")} 
                       className="day-cell border-r last:border-r-0"
@@ -165,7 +163,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {meetingActivities.map((activity) => {
+                  {meetingActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
@@ -212,7 +210,7 @@ export default function MonthView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Confirmed Activities</div>
                 <div className="relative h-6 flex">
-                  {daysInMonth.map((day) => (
+                  {daysInMonth.map((day: Date) => (
                     <div 
                       key={format(day, "yyyy-MM-dd")} 
                       className="day-cell border-r last:border-r-0"
@@ -220,7 +218,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {confirmedActivities.map((activity) => {
+                  {confirmedActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
@@ -267,7 +265,7 @@ export default function MonthView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Tentative Activities</div>
                 <div className="relative h-6 flex">
-                  {daysInMonth.map((day) => (
+                  {daysInMonth.map((day: Date) => (
                     <div 
                       key={format(day, "yyyy-MM-dd")} 
                       className="day-cell border-r last:border-r-0"
@@ -275,7 +273,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {tentativeActivities.map((activity) => {
+                  {tentativeActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
@@ -322,7 +320,7 @@ export default function MonthView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Hypothetical Activities</div>
                 <div className="relative h-6 flex">
-                  {daysInMonth.map((day) => (
+                  {daysInMonth.map((day: Date) => (
                     <div 
                       key={format(day, "yyyy-MM-dd")} 
                       className="day-cell border-r last:border-r-0"
@@ -330,7 +328,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {hypotheticalActivities.map((activity) => {
+                  {hypotheticalActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
@@ -377,7 +375,7 @@ export default function MonthView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Holidays</div>
                 <div className="relative h-6 flex">
-                  {daysInMonth.map((day) => (
+                  {daysInMonth.map((day: Date) => (
                     <div 
                       key={format(day, "yyyy-MM-dd")} 
                       className="day-cell border-r last:border-r-0"
@@ -385,7 +383,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {holidayActivities.map((activity) => {
+                  {holidayActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     
