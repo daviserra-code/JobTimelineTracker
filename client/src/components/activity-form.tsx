@@ -23,6 +23,8 @@ const formSchema = z.object({
   endDate: z.date({ required_error: "End date is required" }),
   type: z.enum(["project", "meeting", "training", "holiday"] as const),
   status: z.enum(["confirmed", "tentative", "hypothetical"] as const),
+  category: z.string().optional(),
+  location: z.string().optional(),
   userId: z.number().optional(),
 }).refine(data => data.endDate >= data.startDate, {
   message: "End date must be after start date",
@@ -48,6 +50,8 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       endDate: initialData?.endDate ? new Date(initialData.endDate) : new Date(),
       type: (initialData?.type as ActivityType) || "meeting",
       status: (initialData?.status as ActivityStatus) || "confirmed",
+      category: initialData?.category || "",
+      location: initialData?.location || "",
       userId: initialData?.userId || 1, // Default to user ID 1 if not provided
     },
   });
@@ -226,6 +230,36 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter activity category" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter activity location" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

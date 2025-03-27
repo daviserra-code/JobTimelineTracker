@@ -28,15 +28,17 @@ export type ActivityFilters = {
   types: ActivityType[];
   statuses: ActivityStatus[];
   dateRange: DateRange | undefined;
-  category?: string;
-  location?: string;
+  category: string;
+  location: string;
 };
 
 const defaultFilters: ActivityFilters = {
   searchQuery: "",
   types: [],
   statuses: [],
-  dateRange: undefined
+  dateRange: undefined,
+  category: "",
+  location: ""
 };
 
 type ActivityFiltersProps = {
@@ -354,7 +356,7 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
               Category: {appliedFilters.category}
               <button 
                 onClick={() => {
-                  const newFilters = { ...appliedFilters, category: undefined };
+                  const newFilters = { ...appliedFilters, category: "" };
                   setAppliedFilters(newFilters);
                   setFilters(newFilters);
                   onFilterChange(newFilters);
@@ -371,7 +373,7 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
               Location: {appliedFilters.location}
               <button 
                 onClick={() => {
-                  const newFilters = { ...appliedFilters, location: undefined };
+                  const newFilters = { ...appliedFilters, location: "" };
                   setAppliedFilters(newFilters);
                   setFilters(newFilters);
                   onFilterChange(newFilters);

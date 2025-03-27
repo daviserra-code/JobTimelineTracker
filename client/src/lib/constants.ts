@@ -8,7 +8,7 @@ export const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string
 };
 
 export const ACTIVITY_STATUSES: Record<ActivityStatus, { label: string; color: string }> = {
-  confirmed: { label: "Confirmed", color: "bg-[#e91e63]" },
+  confirmed: { label: "Confirmed", color: "bg-[#ff4081]" },
   tentative: { label: "Tentative", color: "bg-[#03a9f4]" },
   hypothetical: { label: "Hypothetical", color: "bg-[#ffeb3b]" },
 };
