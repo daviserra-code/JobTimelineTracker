@@ -27,6 +27,8 @@ import {
 } from "@/lib/constants";
 import { ActivityType, ActivityStatus } from "@shared/schema";
 import { Search, Filter, X, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { fadeInDown, staggerContainer, fadeIn } from "@/lib/animations";
 
 export type ActivityFilters = {
   searchQuery: string;
@@ -104,8 +106,18 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
+    <motion.div 
+      className="flex items-center gap-2"
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <motion.div 
+        className="relative"
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: "auto", opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+      >
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search activities..."
@@ -113,31 +125,55 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
           onChange={handleSearchChange}
           className="pl-8 w-[250px] lg:w-[300px]"
         />
-        {filters.searchQuery && (
-          <button
-            onClick={() => setFilters(prev => ({ ...prev, searchQuery: "" }))}
-            className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+        <AnimatePresence>
+          {filters.searchQuery && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15 }}
+              onClick={() => setFilters(prev => ({ ...prev, searchQuery: "" }))}
+              className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 gap-1 px-3">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Filter</span>
-            {activeFilterCount > 0 && (
-              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs w-5 h-5 flex items-center justify-center">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Button variant="outline" size="sm" className="h-9 gap-1 px-3">
+              <Filter className="h-3.5 w-3.5" />
+              <span>Filter</span>
+              <AnimatePresence>
+                {activeFilterCount > 0 && (
+                  <motion.span 
+                    className="ml-1 rounded-full bg-primary text-primary-foreground text-xs w-5 h-5 flex items-center justify-center"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                  >
+                    {activeFilterCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Button>
+          </motion.div>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[340px] p-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <motion.div 
+            className="space-y-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div variants={fadeIn} className="flex items-center justify-between">
               <h4 className="font-medium">Filters</h4>
               <Button
                 variant="ghost"
@@ -148,70 +184,91 @@ export function ActivityFilters({ onFilterChange }: ActivityFiltersProps) {
                 <RefreshCw className="mr-2 h-3 w-3" />
                 Reset
               </Button>
-            </div>
+            </motion.div>
 
-            <div className="space-y-2">
+            <motion.div variants={fadeIn} className="space-y-2">
               <Label>Activity Types</Label>
               <ToggleGroup type="multiple" className="justify-start flex-wrap">
-                {Object.entries(ACTIVITY_TYPES).map(([key, { label }]) => (
-                  <ToggleGroupItem
+                {Object.entries(ACTIVITY_TYPES).map(([key, { label }], index) => (
+                  <motion.div
                     key={key}
-                    value={key}
-                    data-state={filters.types.includes(key as ActivityType) ? "on" : "off"}
-                    onClick={() => handleTypeToggle(key as ActivityType)}
-                    className="text-xs"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
                   >
-                    {label}
-                  </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value={key}
+                      data-state={filters.types.includes(key as ActivityType) ? "on" : "off"}
+                      onClick={() => handleTypeToggle(key as ActivityType)}
+                      className="text-xs"
+                    >
+                      {label}
+                    </ToggleGroupItem>
+                  </motion.div>
                 ))}
               </ToggleGroup>
-            </div>
+            </motion.div>
 
-            <div className="space-y-2">
+            <motion.div variants={fadeIn} className="space-y-2">
               <Label>Activity Status</Label>
               <ToggleGroup type="multiple" className="justify-start flex-wrap">
-                {Object.entries(ACTIVITY_STATUSES).map(([key, { label }]) => (
-                  <ToggleGroupItem
+                {Object.entries(ACTIVITY_STATUSES).map(([key, { label }], index) => (
+                  <motion.div
                     key={key}
-                    value={key}
-                    data-state={filters.statuses.includes(key as ActivityStatus) ? "on" : "off"}
-                    onClick={() => handleStatusToggle(key as ActivityStatus)}
-                    className="text-xs"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + index * 0.03 }}
                   >
-                    {label}
-                  </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value={key}
+                      data-state={filters.statuses.includes(key as ActivityStatus) ? "on" : "off"}
+                      onClick={() => handleStatusToggle(key as ActivityStatus)}
+                      className="text-xs"
+                    >
+                      {label}
+                    </ToggleGroupItem>
+                  </motion.div>
                 ))}
               </ToggleGroup>
-            </div>
+            </motion.div>
 
             {/* Date range functionality to be added later */}
 
-            <div className="space-y-2">
+            <motion.div variants={fadeIn} className="space-y-2">
               <Label>Category</Label>
-              <Input
-                placeholder="Enter category..."
-                value={filters.category}
-                onChange={handleCategoryChange}
-              />
-            </div>
+              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                <Input
+                  placeholder="Enter category..."
+                  value={filters.category}
+                  onChange={handleCategoryChange}
+                />
+              </motion.div>
+            </motion.div>
 
-            <div className="space-y-2">
+            <motion.div variants={fadeIn} className="space-y-2">
               <Label>Location</Label>
-              <Input
-                placeholder="Enter location..."
-                value={filters.location}
-                onChange={handleLocationChange}
-              />
-            </div>
+              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                <Input
+                  placeholder="Enter location..."
+                  value={filters.location}
+                  onChange={handleLocationChange}
+                />
+              </motion.div>
+            </motion.div>
 
-            <div className="flex justify-end pt-2">
+            <motion.div 
+              variants={fadeIn} 
+              className="flex justify-end pt-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Button size="sm" onClick={() => setIsOpen(false)}>
                 Apply Filters
               </Button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </PopoverContent>
       </Popover>
-    </div>
+    </motion.div>
   );
 }

@@ -3,6 +3,8 @@ import { format } from "date-fns";
 import { Activity, Holiday } from "@shared/schema";
 import { ACTIVITY_TYPES, SHORT_MONTHS } from "@/lib/constants";
 import { getWidthPercentage, getLeftPositionPercentage, getContrastTextColor } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { fadeIn, staggerContainer, slideInLeft, fadeInUp } from "@/lib/animations";
 
 interface TimelineMonthHeaderProps {
   year: number;
@@ -10,13 +12,24 @@ interface TimelineMonthHeaderProps {
 
 export function TimelineMonthHeader({ year }: TimelineMonthHeaderProps) {
   return (
-    <div className="flex border-b">
+    <motion.div 
+      className="flex border-b"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {SHORT_MONTHS.map((month, index) => (
-        <div key={`${month}-${year}`} className="timeline-month text-center py-2 font-medium text-sm border-r last:border-r-0">
+        <motion.div 
+          key={`${month}-${year}`} 
+          className="timeline-month text-center py-2 font-medium text-sm border-r last:border-r-0"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.05, duration: 0.3 }}
+        >
           {`${month} ${year}`}
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -86,11 +99,23 @@ export function TimelineActivityRow({ title, activities, year }: TimelineActivit
   }
   
   return (
-    <div className="border-b py-3 px-2 hover:bg-gray-50">
-      <div className="font-medium mb-2">{title}</div>
+    <motion.div 
+      className="border-b py-3 px-2 hover:bg-gray-50"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      <motion.div 
+        className="font-medium mb-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        {title}
+      </motion.div>
       
       <div className="relative h-6">
-        {visibleActivities.map((activity) => {
+        {visibleActivities.map((activity, index) => {
           const activityStart = new Date(activity.startDate);
           const activityEnd = new Date(activity.endDate);
           
@@ -103,33 +128,62 @@ export function TimelineActivityRow({ title, activities, year }: TimelineActivit
           const textColor = getContrastTextColor(color);
           
           return (
-            <div
+            <motion.div
               key={activity.id}
               className={`activity absolute top-0 h-full ${color} rounded-full px-3 py-1 ${textColor} text-xs flex items-center cursor-pointer`}
               style={{ left: `${left}%`, width: `${width}%` }}
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: `${width}%` }}
+              transition={{ 
+                duration: 0.6, 
+                delay: 0.2 + (index * 0.08),
+                ease: "easeOut"
+              }}
+              whileHover={{ 
+                y: -2,
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)"
+              }}
               onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
               onMouseLeave={handleActivityMouseLeave}
             >
-              <span className="truncate">{activity.title}</span>
-            </div>
+              <motion.span 
+                className="truncate"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 + (index * 0.08) }}
+              >
+                {activity.title}
+              </motion.span>
+            </motion.div>
           );
         })}
       </div>
       
-      {isTooltipVisible && (
-        <div
-          className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg max-w-[300px] whitespace-pre-wrap"
-          style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-        >
-          {tooltipContent}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-        </div>
-      )}
-    </div>
+      <AnimatePresence>
+        {isTooltipVisible && (
+          <motion.div
+            className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg max-w-[300px] whitespace-pre-wrap"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y}px`,
+              transform: 'translate(-50%, -100%)'
+            }}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2 }}
+          >
+            {tooltipContent}
+            <motion.div 
+              className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -165,32 +219,63 @@ export default function TimelineView({
   );
   
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-      <div className="border-b px-4 py-3 flex justify-between items-center">
-        <h2 className="text-lg font-medium">Timeline View ({year})</h2>
-        <div className="flex space-x-2">
-          <button 
+    <motion.div 
+      className="bg-white rounded-lg shadow-sm overflow-hidden mb-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div 
+        className="border-b px-4 py-3 flex justify-between items-center"
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.h2 
+          className="text-lg font-medium"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          Timeline View ({year})
+        </motion.h2>
+        <motion.div 
+          className="flex space-x-2"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+        >
+          <motion.button 
             className="p-1 rounded hover:bg-gray-100" 
             title="Zoom out"
             onClick={onZoomOut}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
             <span className="material-icons">zoom_out</span>
-          </button>
-          <button 
+          </motion.button>
+          <motion.button 
             className="p-1 rounded hover:bg-gray-100" 
             title="Zoom in"
             onClick={onZoomIn}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
           >
             <span className="material-icons">zoom_in</span>
-          </button>
-        </div>
-      </div>
+          </motion.button>
+        </motion.div>
+      </motion.div>
       
       <div className="timeline-container">
         <div className="min-w-max">
           <TimelineMonthHeader year={year} />
           
-          <div className="relative min-h-[400px]">
+          <motion.div 
+            className="relative min-h-[400px]"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {projectActivities.length > 0 && (
               <TimelineActivityRow title="Projects" activities={projectActivities} year={year} />
             )}
@@ -213,15 +298,45 @@ export default function TimelineView({
             
             {/* If there are no activities, show empty state */}
             {activities.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[300px] text-gray-500">
-                <span className="material-icons text-4xl mb-2">event_busy</span>
-                <p>No activities for {year}</p>
-                <p className="text-sm mt-1">Add activities to see them on the timeline</p>
-              </div>
+              <motion.div 
+                className="flex flex-col items-center justify-center h-[300px] text-gray-500"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+              >
+                <motion.span 
+                  className="material-icons text-4xl mb-2"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 15,
+                    delay: 0.5
+                  }}
+                >
+                  event_busy
+                </motion.span>
+                <motion.p
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  No activities for {year}
+                </motion.p>
+                <motion.p 
+                  className="text-sm mt-1"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  Add activities to see them on the timeline
+                </motion.p>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

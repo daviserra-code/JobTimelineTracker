@@ -55,20 +55,48 @@ export function DatePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            initialFocus
-            mode={mode}
-            defaultMonth={
-              selected instanceof Date
-                ? selected
-                : selected instanceof Object && "from" in selected && selected.from
+          {mode === "single" && (
+            <Calendar
+              initialFocus
+              mode="single"
+              defaultMonth={
+                selected instanceof Date
+                  ? selected
+                  : new Date()
+              }
+              selected={selected as Date | undefined}
+              onSelect={onSelect as (date: Date | undefined) => void}
+              numberOfMonths={2}
+            />
+          )}
+          {mode === "range" && (
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={
+                selected instanceof Object && "from" in selected && selected.from
                   ? selected.from
                   : new Date()
-            }
-            selected={selected}
-            onSelect={onSelect}
-            numberOfMonths={2}
-          />
+              }
+              selected={selected as DateRange | undefined}
+              onSelect={onSelect as (date: DateRange | undefined) => void}
+              numberOfMonths={2}
+            />
+          )}
+          {mode === "multiple" && (
+            <Calendar
+              initialFocus
+              mode="multiple"
+              defaultMonth={
+                Array.isArray(selected) && selected.length > 0
+                  ? selected[0]
+                  : new Date()
+              }
+              selected={selected as Date[] | undefined}
+              onSelect={onSelect as (date: Date[] | undefined) => void}
+              numberOfMonths={2}
+            />
+          )}
         </PopoverContent>
       </Popover>
     </div>
