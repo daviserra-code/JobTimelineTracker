@@ -37,9 +37,15 @@ export default function Header() {
                 <Download className="mr-2 h-4 w-4" />
                 <span>Import/Export</span>
               </Button>
-              <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
-                <User className="mr-2 h-4 w-4" />
-                <span>Account</span>
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                asChild
+              >
+                <Link href="/account">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account</span>
+                </Link>
               </Button>
               
               <Button 
@@ -105,7 +111,7 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/">
+                  <Link href="/account">
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
                       <User className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Account</span>
