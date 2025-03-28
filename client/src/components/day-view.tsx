@@ -106,7 +106,7 @@ export default function DayView({
     [visibleActivities]
   );
   
-  const meetingActivities = useMemo(() => 
+  const courseDevActivities = useMemo(() => 
     visibleActivities.filter((a: Activity) => a.type === 'meeting'),
     [visibleActivities]
   );

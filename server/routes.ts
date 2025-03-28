@@ -145,9 +145,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Activity not found" });
       }
       
-      const updatedActivity = await storage.updateActivity(id, req.body);
+      // Process dates if they are strings
+      let updateData = { ...req.body };
+      
+      if (updateData.startDate && typeof updateData.startDate === 'string') {
+        updateData.startDate = new Date(updateData.startDate);
+      }
+      
+      if (updateData.endDate && typeof updateData.endDate === 'string') {
+        updateData.endDate = new Date(updateData.endDate);
+      }
+      
+      const updatedActivity = await storage.updateActivity(id, updateData);
       res.json(updatedActivity);
     } catch (error) {
+      console.error("Update activity error:", error);
       res.status(500).json({ message: `Error updating activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });

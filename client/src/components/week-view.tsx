@@ -88,7 +88,7 @@ export default function WeekView({
   
   // Group activities by activity type
   const projectActivities = visibleActivities.filter(a => a.type === 'project');
-  const meetingActivities = visibleActivities.filter(a => a.type === 'meeting');
+  const courseDevActivities = visibleActivities.filter(a => a.type === 'meeting');
   const confirmedActivities = visibleActivities.filter(a => a.status === 'confirmed');
   const tentativeActivities = visibleActivities.filter(a => a.status === 'tentative');
   const hypotheticalActivities = visibleActivities.filter(a => a.status === 'hypothetical');
@@ -174,7 +174,7 @@ export default function WeekView({
               </div>
             )}
             
-            {meetingActivities.length > 0 && (
+            {courseDevActivities.length > 0 && (
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Course Development</div>
                 <div className="relative h-6 flex">
@@ -186,7 +186,7 @@ export default function WeekView({
                     ></div>
                   ))}
                   
-                  {meetingActivities.map((activity) => {
+                  {courseDevActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     

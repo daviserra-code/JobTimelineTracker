@@ -148,7 +148,7 @@ export default function TimelineView({
 }: TimelineViewProps) {
   // Group activities by type for display
   const projectActivities = activities.filter(a => a.type === 'project');
-  const meetingActivities = activities.filter(a => a.type === 'meeting');
+  const courseDevActivities = activities.filter(a => a.type === 'meeting');
   const holidayActivities = activities.filter(a => a.type === 'holiday');
   const confirmedActivities = activities.filter(a => a.type === 'confirmed');
   const tentativeActivities = activities.filter(a => a.type === 'tentative');
@@ -193,10 +193,10 @@ export default function TimelineView({
               />
             )}
             
-            {meetingActivities.length > 0 && (
+            {courseDevActivities.length > 0 && (
               <TimelineActivityRow 
-                title="Meetings" 
-                activities={meetingActivities} 
+                title="Course Development" 
+                activities={courseDevActivities} 
                 year={year}
                 onActivityClick={onActivityClick}
                 onActivityContextMenu={onActivityContextMenu}

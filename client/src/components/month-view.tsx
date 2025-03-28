@@ -81,7 +81,7 @@ export default function MonthView({
   
   // Group activities by activity type
   const projectActivities = visibleActivities.filter((a: Activity) => a.type === 'project');
-  const meetingActivities = visibleActivities.filter((a: Activity) => a.type === 'meeting');
+  const courseDevActivities = visibleActivities.filter((a: Activity) => a.type === 'meeting');
   const confirmedActivities = visibleActivities.filter((a: Activity) => a.status === 'confirmed');
   const tentativeActivities = visibleActivities.filter((a: Activity) => a.status === 'tentative');
   const hypotheticalActivities = visibleActivities.filter((a: Activity) => a.status === 'hypothetical');
@@ -168,7 +168,7 @@ export default function MonthView({
               </div>
             )}
             
-            {meetingActivities.length > 0 && (
+            {courseDevActivities.length > 0 && (
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Course Development</div>
                 <div className="relative h-6 flex">
@@ -180,7 +180,7 @@ export default function MonthView({
                     ></div>
                   ))}
                   
-                  {meetingActivities.map((activity: Activity) => {
+                  {courseDevActivities.map((activity: Activity) => {
                     const activityStart = new Date(activity.startDate);
                     const activityEnd = new Date(activity.endDate);
                     

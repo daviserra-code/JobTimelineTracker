@@ -203,17 +203,22 @@ export default function TimelineView({
   onZoomOut
 }: TimelineViewProps) {
   // Group activities by category for display
-  const projectActivities = activities.filter(a => a.title.toLowerCase().includes('project'));
-  const meetingActivities = activities.filter(a => a.title.toLowerCase().includes('meeting'));
+  const projectActivities = activities.filter(a => a.type === 'project' || a.title.toLowerCase().includes('project'));
+  const courseDevActivities = activities.filter(a => a.type === 'meeting' || a.title.toLowerCase().includes('course') || a.title.toLowerCase().includes('development'));
   const holidayActivities = activities.filter(a => a.type === 'holiday');
   const trainingActivities = activities.filter(a => 
+    a.type === 'training' ||
     a.title.toLowerCase().includes('training') || 
     a.title.toLowerCase().includes('conference')
   );
   const otherActivities = activities.filter(a => 
-    !a.title.toLowerCase().includes('project') && 
-    !a.title.toLowerCase().includes('meeting') && 
+    a.type !== 'project' &&
+    a.type !== 'meeting' &&
     a.type !== 'holiday' &&
+    a.type !== 'training' &&
+    !a.title.toLowerCase().includes('project') && 
+    !a.title.toLowerCase().includes('course') && 
+    !a.title.toLowerCase().includes('development') && 
     !a.title.toLowerCase().includes('training') &&
     !a.title.toLowerCase().includes('conference')
   );
@@ -280,8 +285,8 @@ export default function TimelineView({
               <TimelineActivityRow title="Projects" activities={projectActivities} year={year} />
             )}
             
-            {meetingActivities.length > 0 && (
-              <TimelineActivityRow title="Course Development" activities={meetingActivities} year={year} />
+            {courseDevActivities.length > 0 && (
+              <TimelineActivityRow title="Course Development" activities={courseDevActivities} year={year} />
             )}
             
             {holidayActivities.length > 0 && (
