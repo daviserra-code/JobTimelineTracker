@@ -350,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // User Routes
   
-  // Mock authentication for demo purposes - in a real app, this would be a proper auth system
+  // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -372,6 +372,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: `Login error: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Logout endpoint
+  app.post("/api/auth/logout", (req, res) => {
+    try {
+      // Clear the session
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ message: `Logout error: ${err.message}` });
+        }
+        res.status(200).json({ message: "Logged out successfully" });
+      });
+    } catch (error) {
+      res.status(500).json({ message: `Logout error: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
 
