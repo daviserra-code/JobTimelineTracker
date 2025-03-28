@@ -5,7 +5,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Activity, InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
 import { format } from "date-fns";
-import { DateRange } from "react-day-picker";
 import { ActivityFilters } from "@/components/activity-filters";
 
 interface UseActivitiesProps {
@@ -32,14 +31,6 @@ export function useActivities(props?: UseActivitiesProps) {
     
     if (filters.statuses.length > 0) {
       params.append('statuses', filters.statuses.join(','));
-    }
-    
-    if (filters.dateRange?.from) {
-      params.append('startDate', format(filters.dateRange.from, 'yyyy-MM-dd'));
-    }
-    
-    if (filters.dateRange?.to) {
-      params.append('endDate', format(filters.dateRange.to, 'yyyy-MM-dd'));
     }
     
     if (filters.category) {
