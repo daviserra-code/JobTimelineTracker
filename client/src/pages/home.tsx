@@ -5,6 +5,7 @@ import { useActivities } from "@/hooks/use-activities";
 import { useHolidays } from "@/hooks/use-holidays";
 import { YEARS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import TimelineView from "@/components/timeline-view";
 import MonthView from "@/components/month-view";
 import WeekView from "@/components/week-view";
@@ -211,6 +212,18 @@ export default function Home() {
         
         <div className="tour-notifications">
           <NotificationsPanel />
+        </div>
+        
+        <div className="mt-8 p-4 bg-slate-100 rounded-lg">
+          <h3 className="font-bold text-lg mb-2">Debug Links</h3>
+          <div className="flex gap-4">
+            <Link to="/dashboard-test">
+              <Button variant="outline">Dashboard Test Page</Button>
+            </Link>
+            <Link to="/dashboard">
+              <Button variant="outline">Main Dashboard</Button>
+            </Link>
+          </div>
         </div>
         
         <ImportExportDialog
