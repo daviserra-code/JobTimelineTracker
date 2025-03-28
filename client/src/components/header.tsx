@@ -1,13 +1,44 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings } from "lucide-react";
+import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings, LogIn, LogOut } from "lucide-react";
 import HelpMenu from "@/components/help-menu";
 import UserPreferencesDialog from "@/components/user-preferences-dialog";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Header() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPreferencesDialogOpen, setIsPreferencesDialogOpen] = useState(false);
+  const [location, setLocation] = useLocation();
+  const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
+  
+  // Logout mutation
+  const { mutate: logout, isPending: isLoggingOut } = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout");
+    },
+    onSuccess: () => {
+      // Invalidate user data cache
+      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
+      // Redirect to home
+      setLocation("/");
+    },
+    onError: (error) => {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   
   const toggleDrawer = () => {
     setIsDrawerOpen(!isDrawerOpen);
@@ -60,6 +91,29 @@ export default function Header() {
               <div className="ml-2 text-white">
                 <HelpMenu />
               </div>
+              
+              {isAdmin ? (
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                  onClick={() => logout()}
+                  disabled={isLoggingOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                  asChild
+                >
+                  <Link href="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    <span>Admin Login</span>
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -137,6 +191,29 @@ export default function Header() {
                       <span>Help & Support</span>
                     </a>
                   </Link>
+                </li>
+                
+                <li className="mt-4">
+                  {isAdmin ? (
+                    <button 
+                      className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                      onClick={() => {
+                        setIsDrawerOpen(false);
+                        logout();
+                      }}
+                      disabled={isLoggingOut}
+                    >
+                      <LogOut className="mr-3 h-5 w-5 text-gray-600" />
+                      <span>Logout</span>
+                    </button>
+                  ) : (
+                    <Link href="/login">
+                      <a className="flex items-center p-2 rounded hover:bg-gray-100">
+                        <LogIn className="mr-3 h-5 w-5 text-gray-600" />
+                        <span>Admin Login</span>
+                      </a>
+                    </Link>
+                  )}
                 </li>
               </ul>
             </nav>

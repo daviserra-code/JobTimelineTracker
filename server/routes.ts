@@ -382,11 +382,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session.userId;
       
       if (!userId) {
-        // For demo purposes, return a default admin user when not logged in
+        // Return a default user with 'user' role when not logged in (read-only access)
         return res.json({
           id: 1,
-          username: "admin",
-          role: "admin"
+          username: "guest",
+          role: "user"
         });
       }
       

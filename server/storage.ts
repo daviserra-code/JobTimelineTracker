@@ -197,8 +197,9 @@ export class DatabaseStorage implements IStorage {
   async initializeDatabase(): Promise<void> {
     // Check if we already have a demo user
     const existingUser = await this.getUserByUsername("demo");
+    const existingAdminUser = await this.getUserByUsername("Administrator");
     
-    if (existingUser) {
+    if (existingUser && existingAdminUser) {
       console.log("Database already initialized with sample data");
       return;
     }
@@ -211,6 +212,15 @@ export class DatabaseStorage implements IStorage {
       password: "demo123",
       role: "admin", // Admin role by default
     });
+    
+    // Create the Administrator user
+    if (!existingAdminUser) {
+      await this.createUser({
+        username: "Administrator",
+        password: "dvd70ply",
+        role: "admin", // Admin role
+      });
+    }
     
     // Create default user preferences
     const defaultPreferences = await this.createUserPreferences({

@@ -1,113 +1,84 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, differenceInDays, addDays, isAfter, isBefore, isEqual } from "date-fns";
-import { Activity } from "@shared/schema";
-
+import { differenceInDays, format } from "date-fns";
+ 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Format date for display
 export function formatDate(date: Date): string {
-  return format(date, "MMM d, yyyy");
+  return format(date, 'MMM d, yyyy');
 }
 
-export function formatDateWithTime(date: Date): string {
-  return format(date, "MMM d, yyyy (h:mm a)");
-}
-
-export function formatTimeRange(start: Date, end: Date): string {
-  return `${format(start, "h:mm a")} - ${format(end, "h:mm a")}`;
-}
-
+// Get relative days from now to a date
 export function getRelativeDays(date: Date): number {
-  return differenceInDays(date, new Date());
+  const now = new Date();
+  return differenceInDays(date, now);
 }
 
+// Convert relative days to text description
 export function getRelativeDaysText(days: number): string {
   if (days === 0) return "Today";
   if (days === 1) return "Tomorrow";
+  if (days > 1) return `In ${days} days`;
   if (days === -1) return "Yesterday";
-  if (days > 0) return `In ${days} days`;
   return `${Math.abs(days)} days ago`;
 }
 
-export function getMonthsForYear(year: number): string[] {
-  return Array.from({ length: 12 }, (_, i) => {
-    const date = new Date(year, i, 1);
-    return format(date, "MMM yyyy");
-  });
+// Function to determine if text should be dark or light based on background color
+export function getContrastTextColor(hexColor: string): "black" | "white" {
+  // Remove the hash symbol if present
+  hexColor = hexColor.replace('#', '');
+  
+  // Convert to RGB
+  const r = parseInt(hexColor.substring(0, 2), 16);
+  const g = parseInt(hexColor.substring(2, 4), 16);
+  const b = parseInt(hexColor.substring(4, 6), 16);
+  
+  // Calculate brightness (YIQ equation)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  
+  // Return black for bright colors and white for dark colors
+  return brightness > 128 ? "black" : "white";
 }
 
-export function getPositionPercentage(
-  date: Date,
-  startDate: Date,
-  endDate: Date
-): number {
-  const totalDays = differenceInDays(endDate, startDate);
-  const currentDays = differenceInDays(date, startDate);
-  return (currentDays / totalDays) * 100;
-}
-
+// Calculate width percentage for timeline activities
 export function getWidthPercentage(
   startDate: Date,
   endDate: Date,
   periodStart: Date,
   periodEnd: Date
 ): number {
-  // Ensure dates are within period
-  const effectiveStart = isBefore(startDate, periodStart) ? periodStart : startDate;
-  const effectiveEnd = isAfter(endDate, periodEnd) ? periodEnd : endDate;
+  // Ensure dates are within the period
+  const clampedStart = startDate < periodStart ? periodStart : startDate;
+  const clampedEnd = endDate > periodEnd ? periodEnd : endDate;
   
-  // Calculate total period days and activity days
+  // Calculate total days in period
   const totalDays = differenceInDays(periodEnd, periodStart) + 1;
-  const activityDays = differenceInDays(effectiveEnd, effectiveStart) + 1;
   
-  return (activityDays / totalDays) * 100;
+  // Calculate activity duration in days
+  const durationDays = differenceInDays(clampedEnd, clampedStart) + 1;
+  
+  // Calculate percentage of period that the activity spans
+  return (durationDays / totalDays) * 100;
 }
 
+// Calculate left position percentage for timeline activities
 export function getLeftPositionPercentage(
   startDate: Date,
   periodStart: Date,
   periodEnd: Date
 ): number {
-  // If the start date is before the period start, left position is 0
-  if (isBefore(startDate, periodStart) || isEqual(startDate, periodStart)) {
-    return 0;
-  }
+  // Ensure date is within the period
+  const clampedStart = startDate < periodStart ? periodStart : startDate;
   
+  // Calculate total days in period
   const totalDays = differenceInDays(periodEnd, periodStart) + 1;
-  const startOffset = differenceInDays(startDate, periodStart);
   
-  return (startOffset / totalDays) * 100;
-}
-
-export function downloadFile(data: any, filename: string, type: string): void {
-  const blob = new Blob([data], { type });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  setTimeout(() => {
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  }, 100);
-}
-
-export function getContrastTextColor(bgColor: string): string {
-  // For this implementation, we'll just return preset colors
-  // In a real app, you might calculate contrast based on the background color
-  switch (bgColor) {
-    case "bg-[#e91e63]": // confirmed - pink
-      return "text-white";
-    case "bg-[#03a9f4]": // tentative - light blue
-      return "text-white";
-    case "bg-[#f44336]": // holiday - red
-      return "text-white";
-    case "bg-[#ffeb3b]": // hypothetical - yellow
-      return "text-black";
-    default:
-      return "text-white";
-  }
+  // Calculate days from period start to activity start
+  const daysFromStart = differenceInDays(clampedStart, periodStart);
+  
+  // Calculate percentage position
+  return (daysFromStart / totalDays) * 100;
 }

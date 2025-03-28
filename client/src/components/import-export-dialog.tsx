@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useActivities } from "@/hooks/use-activities";
 import { Activity, InsertActivity, ImportExportFormat } from "@shared/schema";
-import { downloadFile } from "@/lib/utils";
+import { downloadFile } from "@/lib/export";
 import * as XLSX from 'xlsx';
 
 interface ImportExportDialogProps {
@@ -56,14 +56,16 @@ export default function ImportExportDialog({ open, onOpenChange, activities }: I
       switch (format) {
         case "xlsx":
           const workbook = XLSX.utils.book_new();
-          const worksheet = XLSX.utils.json_to_sheet(activities);
-          XLSX.utils.book_append_sheet(workbook, worksheet, "Activities");
+          const worksheetXls = XLSX.utils.json_to_sheet(activities);
+          XLSX.utils.book_append_sheet(workbook, worksheetXls, "Activities");
           const xlsxData = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
           downloadFile(xlsxData, `${filename}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
           break;
         
         case "csv":
-          const csv = XLSX.utils.json_to_csv(activities);
+          const workbookCsv = XLSX.utils.book_new();
+          const worksheetCsv = XLSX.utils.json_to_sheet(activities);
+          const csv = XLSX.utils.sheet_to_csv(worksheetCsv);
           downloadFile(csv, `${filename}.csv`, "text/csv");
           break;
         
@@ -111,9 +113,11 @@ export default function ImportExportDialog({ open, onOpenChange, activities }: I
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             importData = XLSX.utils.sheet_to_json(firstSheet);
           } else if (extension === 'csv') {
-            // Assuming event.target.result is a string
+            // Parse CSV using XLSX
             const csvData = event.target?.result as string;
-            importData = XLSX.utils.csv_to_json(csvData);
+            const workbook = XLSX.read(csvData, { type: 'string' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            importData = XLSX.utils.sheet_to_json(firstSheet);
           } else if (extension === 'json') {
             // Assuming event.target.result is a string
             const jsonData = event.target?.result as string;
