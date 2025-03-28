@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -11,7 +11,7 @@ import MobileNav from "@/components/mobile-nav";
 import { OnboardingTour } from "@/components/onboarding-tour";
 import { useEffect, useCallback } from "react";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
-import { AuthProvider } from "./hooks/use-auth";
+
 
 function Router() {
   const [location] = useLocation();
@@ -161,12 +161,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <OnboardingTour>
-          <Router />
-          <Toaster />
-        </OnboardingTour>
-      </AuthProvider>
+      <OnboardingTour>
+        <Router />
+        <Toaster />
+      </OnboardingTour>
     </QueryClientProvider>
   );
 }

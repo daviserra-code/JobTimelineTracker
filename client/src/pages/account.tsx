@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Label } from "../components/ui/label";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
-import { Button } from "../components/ui/button";
-import { Switch } from "../components/ui/switch";
-import { useToast } from "../hooks/use-toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "../lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { UserRole } from "@shared/schema";
-import { Spinner } from "../components/ui/spinner";
+import { Spinner } from "@/components/ui/spinner";
 import { motion } from "framer-motion";
-import { useAuth } from "../hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 
 // Simple animation for the cards
 const containerVariants = {
