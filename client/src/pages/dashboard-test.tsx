@@ -1,94 +1,92 @@
-import { useState, useEffect } from "react";
-
-interface DashboardStats {
-  totalActivities: number;
-  byType: Record<string, number>;
-  byStatus: Record<string, number>;
-  byMonth: Record<string, number>;
-  byCategory: Record<string, number>;
-}
+import React, { useState, useEffect } from 'react';
 
 export default function DashboardTestPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [apiResponse, setApiResponse] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/dashboard/stats");
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-        const data = await response.json();
-        setStats(data);
-        setError("");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching dashboard stats:", err);
-      } finally {
-        setIsLoading(false);
-      }
+  // Function to fetch API data
+  const fetchApiData = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/dashboard/stats');
+      const data = await response.json();
+      setApiResponse(JSON.stringify(data, null, 2));
+    } catch (err) {
+      setError('Failed to fetch API data');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchStats();
-  }, []);
-
-  if (isLoading) {
-    return <div className="p-8">Loading dashboard data...</div>;
-  }
-
-  if (error) {
-    return <div className="p-8" style={{ color: "red" }}>Error loading dashboard data: {error}</div>;
-  }
-
-  if (!stats) {
-    return <div className="p-8">No dashboard data available</div>;
-  }
+  };
 
   return (
-    <div className="container p-8">
-      <h1 className="text-3xl font-bold mb-6">Dashboard Test Page</h1>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>
+        Dashboard Test Page - Basic Version
+      </h1>
       
-      <div className="mb-6 p-4 border rounded-md shadow-sm">
-        <h2 className="text-xl font-bold mb-2">Dashboard Data</h2>
-        <p className="mb-2 text-gray-600">Raw data from API</p>
-        <pre className="p-4 bg-gray-100 rounded overflow-auto">
-          {JSON.stringify(stats, null, 2)}
-        </pre>
-      </div>
-      
-      <div className="mb-6 p-4 border rounded-md shadow-sm">
-        <h2 className="text-xl font-bold mb-2">Total Activities</h2>
-        <div className="text-4xl font-bold">{stats.totalActivities}</div>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="p-4 border rounded-md shadow-sm">
-          <h2 className="text-xl font-bold mb-2">Activity Types</h2>
-          <ul className="space-y-2">
-            {Object.entries(stats.byType).map(([type, count]) => (
-              <li key={type} className="flex justify-between">
-                <span className="capitalize">{type}</span>
-                <span className="font-medium">{count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <div style={{ marginBottom: '20px' }}>
+        <p style={{ marginBottom: '10px' }}>
+          This is a simple test page to verify the API is working.
+        </p>
         
-        <div className="p-4 border rounded-md shadow-sm">
-          <h2 className="text-xl font-bold mb-2">Activity Status</h2>
-          <ul className="space-y-2">
-            {Object.entries(stats.byStatus).map(([status, count]) => (
-              <li key={status} className="flex justify-between">
-                <span className="capitalize">{status}</span>
-                <span className="font-medium">{count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <button 
+          onClick={fetchApiData}
+          style={{
+            backgroundColor: '#4f46e5',
+            color: 'white',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginRight: '10px'
+          }}
+        >
+          Fetch API Data
+        </button>
+        
+        <a 
+          href="/api/dashboard/stats" 
+          target="_blank" 
+          style={{ 
+            color: '#4f46e5', 
+            textDecoration: 'underline' 
+          }}
+        >
+          Open API Directly
+        </a>
       </div>
+      
+      {isLoading && (
+        <div style={{ padding: '20px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+          Loading API data...
+        </div>
+      )}
+      
+      {error && (
+        <div style={{ padding: '20px', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '4px' }}>
+          {error}
+        </div>
+      )}
+      
+      {apiResponse && (
+        <div style={{ marginTop: '20px' }}>
+          <h2 style={{ marginBottom: '10px', fontSize: '18px', fontWeight: 'bold' }}>API Response:</h2>
+          <pre style={{ 
+            padding: '15px', 
+            backgroundColor: '#f3f4f6', 
+            borderRadius: '4px',
+            overflow: 'auto',
+            maxHeight: '400px',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
+          }}>
+            {apiResponse}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
