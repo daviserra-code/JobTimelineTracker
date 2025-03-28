@@ -1,9 +1,35 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getHolidaysForYear } from "./holiday-api";
 import { z } from "zod";
-import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema } from "@shared/schema";
+import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema, User } from "@shared/schema";
+
+// Helper function to get the current user
+async function getCurrentUser(req: Request): Promise<User | null> {
+  const userId = req.session.userId;
+  if (!userId) {
+    return null;
+  }
+  return await storage.getUser(userId) || null;
+}
+
+// Admin authorization middleware
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const userId = req.session.userId;
+  if (!userId) {
+    return res.status(403).json({ message: "Permission denied: Login required" });
+  }
+  
+  storage.getUser(userId).then(user => {
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Permission denied: Admin role required" });
+    }
+    next();
+  }).catch(error => {
+    res.status(500).json({ message: `Authorization error: ${error instanceof Error ? error.message : 'Unknown error'}` });
+  });
+}
 
 // Extend Express Request type to include session
 declare module 'express-session' {
@@ -131,6 +157,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new activity
   app.post("/api/activities", async (req, res) => {
     try {
+      // Check if user is an admin
+      const user = await getCurrentUser(req);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      }
+      
       const validatedData = insertActivitySchema.parse(req.body);
       const createdActivity = await storage.createActivity(validatedData);
       
@@ -159,6 +191,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update an activity
   app.patch("/api/activities/:id", async (req, res) => {
     try {
+      // Check if user is an admin
+      const user = await getCurrentUser(req);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      }
+      
       const id = parseInt(req.params.id);
       const activity = await storage.getActivity(id);
       
@@ -188,6 +226,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete an activity
   app.delete("/api/activities/:id", async (req, res) => {
     try {
+      // Check if user is an admin
+      const user = await getCurrentUser(req);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      }
+      
       const id = parseInt(req.params.id);
       const activity = await storage.getActivity(id);
       
@@ -205,6 +249,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import activities
   app.post("/api/activities/import", async (req, res) => {
     try {
+      // Check if user is an admin
+      const user = await getCurrentUser(req);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      }
+      
       const { activities } = req.body;
       
       if (!Array.isArray(activities)) {
