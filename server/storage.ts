@@ -195,267 +195,272 @@ export class DatabaseStorage implements IStorage {
   
   // Database initialization with sample data
   async initializeDatabase(): Promise<void> {
-    // Check if we already have a demo user
-    const existingUser = await this.getUserByUsername("demo");
-    const existingAdminUser = await this.getUserByUsername("Administrator");
-    
-    if (existingUser && existingAdminUser) {
-      console.log("Database already initialized with sample data");
-      return;
-    }
-    
-    console.log("Initializing database with sample data...");
-    
-    // Create a sample user
-    const user = await this.createUser({
-      username: "demo",
-      password: "demo123",
-      role: "admin", // Admin role by default
-    });
-    
-    // Create the Administrator user
-    if (!existingAdminUser) {
-      await this.createUser({
-        username: "Administrator",
-        password: "dvd70ply",
-        role: "admin", // Admin role
-      });
-    }
-    
-    // Create default user preferences
-    const defaultPreferences = await this.createUserPreferences({
-      userId: user.id,
-      defaultViewMode: "month",
-      defaultRegions: ["italy", "europe"],
-      theme: "light",
-      notificationsEnabled: true,
-      notificationLeadTime: 3,
-      customSettings: {
-        showWeekends: true,
-        defaultWorkingHours: {
-          start: "09:00",
-          end: "17:00"
-        }
-      },
-    });
-    
-    // Create sample activities
-    const sampleActivities = [
-      {
-        title: "Project Alpha: Phase 1",
-        description: "Initial phase of Project Alpha",
-        startDate: new Date(2025, 0, 10),
-        endDate: new Date(2025, 1, 25),
-        type: "project",
-        status: "confirmed",
-        category: "Development",
-        location: "Remote",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Project Alpha: Phase 2",
-        description: "Second phase of Project Alpha",
-        startDate: new Date(2025, 2, 15),
-        endDate: new Date(2025, 4, 20),
-        type: "project",
-        status: "tentative",
-        category: "Development",
-        location: "Remote",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Project Alpha: Phase 3",
-        description: "Final phase of Project Alpha",
-        startDate: new Date(2025, 6, 10),
-        endDate: new Date(2025, 9, 15),
-        type: "project",
-        status: "hypothetical",
-        category: "Development",
-        location: "Remote",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Client Meeting: Kickoff",
-        description: "Initial client kickoff meeting",
-        startDate: new Date(2025, 0, 15),
-        endDate: new Date(2025, 0, 15),
-        type: "meeting",
-        status: "confirmed",
-        category: "Client",
-        location: "Main Office",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Client Meeting: Review",
-        description: "Client review meeting",
-        startDate: new Date(2025, 2, 25),
-        endDate: new Date(2025, 2, 25),
-        type: "meeting",
-        status: "confirmed",
-        category: "Client",
-        location: "Main Office",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Client Meeting: Planning",
-        description: "Client planning session",
-        startDate: new Date(2025, 5, 5),
-        endDate: new Date(2025, 5, 5),
-        type: "meeting",
-        status: "tentative",
-        category: "Client",
-        location: "Conference Room",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "New Year's Day",
-        description: "Public holiday",
-        startDate: new Date(2025, 0, 1),
-        endDate: new Date(2025, 0, 1),
-        type: "holiday",
-        status: "confirmed",
-        category: "Public Holiday",
-        location: "Italy",
-        region: "italy",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Easter",
-        description: "Public holiday",
-        startDate: new Date(2025, 3, 20),
-        endDate: new Date(2025, 3, 20),
-        type: "holiday",
-        status: "confirmed",
-        category: "Public Holiday",
-        location: "Italy",
-        region: "italy",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Summer Vacation",
-        description: "Annual summer holiday",
-        startDate: new Date(2025, 7, 1),
-        endDate: new Date(2025, 7, 15),
-        type: "holiday",
-        status: "confirmed",
-        category: "Personal",
-        location: "Beach Resort",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Tech Conference",
-        description: "Annual technology conference",
-        startDate: new Date(2025, 2, 10),
-        endDate: new Date(2025, 2, 15),
-        type: "training",
-        status: "tentative",
-        category: "Professional Development",
-        location: "Convention Center",
-        region: "usa",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Leadership Workshop",
-        description: "Leadership skills development",
-        startDate: new Date(2025, 5, 25),
-        endDate: new Date(2025, 5, 30),
-        type: "training",
-        status: "confirmed",
-        category: "Professional Development",
-        location: "Corporate Training Center",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Industry Summit",
-        description: "Annual industry summit",
-        startDate: new Date(2025, 8, 15),
-        endDate: new Date(2025, 8, 20),
-        type: "training",
-        status: "hypothetical",
-        category: "Professional Development",
-        location: "Global Conference Center",
-        region: "asia",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Beta Testing",
-        description: "Product beta testing phase",
-        startDate: new Date(2025, 4, 10),
-        endDate: new Date(2025, 4, 30),
-        type: "project",
-        status: "tentative",
-        category: "Product Development",
-        location: "Tech Lab",
-        region: "europe",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Marketing Campaign",
-        description: "Marketing campaign kickoff",
-        startDate: new Date(2025, 6, 1),
-        endDate: new Date(2025, 6, 20),
-        type: "project",
-        status: "hypothetical",
-        category: "Marketing",
-        location: "Marketing Department",
-        region: "usa",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-      {
-        title: "Product Launch",
-        description: "Official product launch event",
-        startDate: new Date(2025, 7, 15),
-        endDate: new Date(2025, 7, 15),
-        type: "meeting",
-        status: "confirmed",
-        category: "Product Development",
-        location: "Conference Hall",
-        region: "usa",
-        notificationEnabled: true,
-        userId: user.id,
-      },
-    ];
-    
-    // Add sample activities to the database and create notifications for each
-    for (const activityData of sampleActivities) {
-      const activity = await this.createActivity(activityData);
+    try {
+      // Check if we already have a demo user
+      const existingUser = await this.getUserByUsername("demo");
+      const existingAdminUser = await this.getUserByUsername("Administrator");
       
-      // Create a notification for the activity
-      const startDate = new Date(activity.startDate);
-      const notifyDate = new Date(startDate);
-      notifyDate.setDate(startDate.getDate() - 5);
+      if (existingUser && existingAdminUser) {
+        console.log("Database already initialized with sample data");
+        return;
+      }
       
-      await this.createNotification({
-        activityId: activity.id,
-        notifyDate,
-        read: false,
-        userId: user.id,
+      console.log("Initializing database with sample data...");
+      
+      // Create a sample user
+      const user = await this.createUser({
+        username: "demo",
+        password: "demo123",
+        role: "admin", // Admin role by default
       });
+      
+      // Create the Administrator user
+      if (!existingAdminUser) {
+        await this.createUser({
+          username: "Administrator",
+          password: "dvd70ply",
+          role: "admin", // Admin role
+        });
+      }
+      
+      // Create default user preferences
+      const defaultPreferences = await this.createUserPreferences({
+        userId: user.id,
+        defaultViewMode: "month",
+        defaultRegions: ["italy", "europe"],
+        theme: "light",
+        notificationsEnabled: true,
+        notificationLeadTime: 3,
+        customSettings: {
+          showWeekends: true,
+          defaultWorkingHours: {
+            start: "09:00",
+            end: "17:00"
+          }
+        },
+      });
+      
+      // Create sample activities
+      const sampleActivities = [
+        {
+          title: "Project Alpha: Phase 1",
+          description: "Initial phase of Project Alpha",
+          startDate: new Date(2025, 0, 10),
+          endDate: new Date(2025, 1, 25),
+          type: "project",
+          status: "confirmed",
+          category: "Development",
+          location: "Remote",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Project Alpha: Phase 2",
+          description: "Second phase of Project Alpha",
+          startDate: new Date(2025, 2, 15),
+          endDate: new Date(2025, 4, 20),
+          type: "project",
+          status: "tentative",
+          category: "Development",
+          location: "Remote",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Project Alpha: Phase 3",
+          description: "Final phase of Project Alpha",
+          startDate: new Date(2025, 6, 10),
+          endDate: new Date(2025, 9, 15),
+          type: "project",
+          status: "hypothetical",
+          category: "Development",
+          location: "Remote",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Client Meeting: Kickoff",
+          description: "Initial client kickoff meeting",
+          startDate: new Date(2025, 0, 15),
+          endDate: new Date(2025, 0, 15),
+          type: "meeting",
+          status: "confirmed",
+          category: "Client",
+          location: "Main Office",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Client Meeting: Review",
+          description: "Client review meeting",
+          startDate: new Date(2025, 2, 25),
+          endDate: new Date(2025, 2, 25),
+          type: "meeting",
+          status: "confirmed",
+          category: "Client",
+          location: "Main Office",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Client Meeting: Planning",
+          description: "Client planning session",
+          startDate: new Date(2025, 5, 5),
+          endDate: new Date(2025, 5, 5),
+          type: "meeting",
+          status: "tentative",
+          category: "Client",
+          location: "Conference Room",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "New Year's Day",
+          description: "Public holiday",
+          startDate: new Date(2025, 0, 1),
+          endDate: new Date(2025, 0, 1),
+          type: "holiday",
+          status: "confirmed",
+          category: "Public Holiday",
+          location: "Italy",
+          region: "italy",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Easter",
+          description: "Public holiday",
+          startDate: new Date(2025, 3, 20),
+          endDate: new Date(2025, 3, 20),
+          type: "holiday",
+          status: "confirmed",
+          category: "Public Holiday",
+          location: "Italy",
+          region: "italy",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Summer Vacation",
+          description: "Annual summer holiday",
+          startDate: new Date(2025, 7, 1),
+          endDate: new Date(2025, 7, 15),
+          type: "holiday",
+          status: "confirmed",
+          category: "Personal",
+          location: "Beach Resort",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Tech Conference",
+          description: "Annual technology conference",
+          startDate: new Date(2025, 2, 10),
+          endDate: new Date(2025, 2, 15),
+          type: "training",
+          status: "tentative",
+          category: "Professional Development",
+          location: "Convention Center",
+          region: "usa",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Leadership Workshop",
+          description: "Leadership skills development",
+          startDate: new Date(2025, 5, 25),
+          endDate: new Date(2025, 5, 30),
+          type: "training",
+          status: "confirmed",
+          category: "Professional Development",
+          location: "Corporate Training Center",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Industry Summit",
+          description: "Annual industry summit",
+          startDate: new Date(2025, 8, 15),
+          endDate: new Date(2025, 8, 20),
+          type: "training",
+          status: "hypothetical",
+          category: "Professional Development",
+          location: "Global Conference Center",
+          region: "asia",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Beta Testing",
+          description: "Product beta testing phase",
+          startDate: new Date(2025, 4, 10),
+          endDate: new Date(2025, 4, 30),
+          type: "project",
+          status: "tentative",
+          category: "Product Development",
+          location: "Tech Lab",
+          region: "europe",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Marketing Campaign",
+          description: "Marketing campaign kickoff",
+          startDate: new Date(2025, 6, 1),
+          endDate: new Date(2025, 6, 20),
+          type: "project",
+          status: "hypothetical",
+          category: "Marketing",
+          location: "Marketing Department",
+          region: "usa",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+        {
+          title: "Product Launch",
+          description: "Official product launch event",
+          startDate: new Date(2025, 7, 15),
+          endDate: new Date(2025, 7, 15),
+          type: "meeting",
+          status: "confirmed",
+          category: "Product Development",
+          location: "Conference Hall",
+          region: "usa",
+          notificationEnabled: true,
+          userId: user.id,
+        },
+      ];
+      
+      // Add sample activities to the database and create notifications for each
+      for (const activityData of sampleActivities) {
+        const activity = await this.createActivity(activityData);
+        
+        // Create a notification for the activity
+        const startDate = new Date(activity.startDate);
+        const notifyDate = new Date(startDate);
+        notifyDate.setDate(startDate.getDate() - 5);
+        
+        await this.createNotification({
+          activityId: activity.id,
+          notifyDate,
+          read: false,
+          userId: user.id,
+        });
+      }
+      
+      console.log("Database initialized with sample data");
+    } catch (error) {
+      console.error("Error initializing database:", error);
+      throw error;
     }
-    
-    console.log("Database initialized with sample data");
   }
 }
 
