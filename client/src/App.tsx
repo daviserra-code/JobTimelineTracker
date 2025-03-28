@@ -5,11 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import AccountPage from "@/pages/account";
 import Header from "@/components/header";
 import MobileNav from "@/components/mobile-nav";
 import { OnboardingTour } from "@/components/onboarding-tour";
 import { useEffect, useCallback } from "react";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { AuthProvider } from "./hooks/use-auth";
 
 function Router() {
   const [location] = useLocation();
@@ -144,6 +146,7 @@ function Router() {
       <div className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/account" component={AccountPage} />
           <Route component={NotFound} />
         </Switch>
       </div>
@@ -158,10 +161,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <OnboardingTour>
-        <Router />
-        <Toaster />
-      </OnboardingTour>
+      <AuthProvider>
+        <OnboardingTour>
+          <Router />
+          <Toaster />
+        </OnboardingTour>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

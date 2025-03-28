@@ -4,6 +4,10 @@ import { Holiday, Region } from "@shared/schema";
 // we'll use a static dataset with common holidays for demonstration purposes
 
 const STATIC_HOLIDAYS: Record<Region, Record<number, Holiday[]>> = {
+  all: {
+    2025: [],
+    2026: [],
+  },
   italy: {
     2025: [
       { id: "it-1", name: "New Year's Day", date: new Date(2025, 0, 1), region: "italy" },
@@ -121,9 +125,43 @@ function generateHolidaysForYear(region: Region, year: number): Holiday[] {
   });
 }
 
+// Helper function to generate weekend holidays for a specific year
+function generateWeekendHolidaysForYear(year: number): Holiday[] {
+  const weekendHolidays: Holiday[] = [];
+  const startDate = new Date(year, 0, 1);  // January 1st of the specified year
+  const endDate = new Date(year, 11, 31);  // December 31st of the specified year
+  
+  // Assign a unique starting ID for weekend holidays
+  let idCounter = 1000;
+  
+  // Loop through all days of the year
+  for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+    // Check if the day is Saturday (6) or Sunday (0)
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      const dayName = dayOfWeek === 0 ? "Sunday" : "Saturday";
+      const formattedDate = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      
+      weekendHolidays.push({
+        id: `weekend-${year}-${idCounter++}`,
+        name: `Weekend (${dayName} - ${formattedDate})`,
+        date: new Date(date),
+        region: "all", // Using 'all' to indicate this applies to all regions
+      });
+    }
+  }
+  
+  return weekendHolidays;
+}
+
 export async function getHolidaysForYear(year: number, regions: string[]): Promise<Holiday[]> {
   const holidays: Holiday[] = [];
   
+  // Generate weekend holidays for all regions
+  const weekendHolidays = generateWeekendHolidaysForYear(year);
+  holidays.push(...weekendHolidays);
+  
+  // Add regular holidays from the regions
   for (const region of regions) {
     if (region in STATIC_HOLIDAYS) {
       const regionHolidays = STATIC_HOLIDAYS[region as Region][year];

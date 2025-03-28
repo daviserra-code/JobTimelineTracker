@@ -1,11 +1,32 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getHolidaysForYear } from "./holiday-api";
 import { z } from "zod";
 import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema } from "@shared/schema";
 
+// Extend Express Request type to include session
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+  }
+}
+
+// Import express session
+import session from 'express-session';
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up session middleware
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'activity-planner-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
   // API routes prefix: /api
   
   // Activities Routes
@@ -324,6 +345,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(holidays);
     } catch (error) {
       res.status(500).json({ message: `Error fetching holidays: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // User Routes
+  
+  // Mock authentication for demo purposes - in a real app, this would be a proper auth system
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Set up session (simplified for demo)
+      req.session.userId = user.id;
+      
+      res.json({ 
+        id: user.id, 
+        username: user.username,
+        role: user.role
+      });
+    } catch (error) {
+      res.status(500).json({ message: `Login error: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+
+  // Get current user
+  app.get("/api/users/me", async (req, res) => {
+    try {
+      // Check if user is logged in
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        // For demo purposes, return a default admin user when not logged in
+        return res.json({
+          id: 1,
+          username: "admin",
+          role: "admin"
+        });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't send password to client
+      const { password, ...userWithoutPassword } = user;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching user: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Update user role
+  app.patch("/api/users/role", async (req, res) => {
+    try {
+      const userId = req.session.userId || 1; // Default to user 1 for demo
+      const { role } = req.body;
+      
+      if (!role || (role !== "admin" && role !== "user")) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user role
+      const updatedUser = await storage.updateUser(userId, { role });
+      
+      // Don't send password to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: `Error updating user role: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // User preferences route
+  app.get("/api/preferences", async (req, res) => {
+    try {
+      const userId = req.session.userId || 1; // Default to user 1 for demo
+      const preferences = await storage.getUserPreferences(userId);
+      
+      if (!preferences) {
+        // Create default preferences if not found
+        const defaultPreferences = await storage.createUserPreferences({
+          userId,
+          defaultViewMode: "month",
+          defaultRegions: ["italy"],
+          theme: "light",
+          notificationsEnabled: true,
+          notificationLeadTime: 1
+        });
+        
+        return res.json(defaultPreferences);
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching preferences: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Update user preferences
+  app.patch("/api/preferences", async (req, res) => {
+    try {
+      const userId = req.session.userId || 1; // Default to user 1 for demo
+      
+      // Check if preferences exist, create if not
+      let preferences = await storage.getUserPreferences(userId);
+      
+      if (!preferences) {
+        // Create default preferences first
+        preferences = await storage.createUserPreferences({
+          userId,
+          defaultViewMode: "month",
+          defaultRegions: ["italy"],
+          theme: "light",
+          notificationsEnabled: true,
+          notificationLeadTime: 1,
+          ...req.body
+        });
+      } else {
+        // Update existing preferences
+        preferences = await storage.updateUserPreferences(userId, req.body);
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      res.status(500).json({ message: `Error updating preferences: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
   

@@ -6,11 +6,13 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("user"), // "admin" or "user"
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  role: true,
 });
 
 export const userPreferences = pgTable("user_preferences", {
@@ -97,11 +99,13 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type ActivityType = "project" | "meeting" | "training" | "holiday";
 export type ActivityStatus = "confirmed" | "tentative" | "hypothetical";
 
-export type Region = "italy" | "europe" | "usa" | "asia";
+export type Region = "italy" | "europe" | "usa" | "asia" | "all";
 
 export type ViewMode = "timeline" | "month" | "week" | "day";
 
 export type ImportExportFormat = "xlsx" | "csv" | "json";
+
+export type UserRole = "admin" | "user";
 
 export type Holiday = {
   id: string;

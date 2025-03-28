@@ -25,6 +25,7 @@ export const REGIONS: Record<Region, string> = {
   europe: "Europe",
   usa: "USA",
   asia: "Asia",
+  all: "All Regions",
 };
 
 export const YEARS = [2025, 2026, 2027, 2028, 2029, 2030];

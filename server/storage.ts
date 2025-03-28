@@ -20,6 +20,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User>;
   
   // User Preferences methods
   getUserPreferences(userId: number): Promise<UserPreference | undefined>;
@@ -58,6 +59,21 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    const existingUser = await this.getUser(id);
+    
+    if (!existingUser) {
+      throw new Error(`User with ID ${id} not found`);
+    }
+    
+    const result = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    
     return result[0];
   }
   
@@ -193,6 +209,7 @@ export class DatabaseStorage implements IStorage {
     const user = await this.createUser({
       username: "demo",
       password: "demo123",
+      role: "admin", // Admin role by default
     });
     
     // Create default user preferences
