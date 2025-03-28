@@ -3,6 +3,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "
 import { Activity, Holiday } from "@shared/schema";
 import { ACTIVITY_TYPES, DAYS_OF_WEEK } from "@/lib/constants";
 import { getContrastTextColor } from "@/lib/utils";
+import WeekendHighlighter, { isWeekend } from "@/components/weekend-highlighter";
 
 interface MonthViewProps {
   activities: Activity[];
@@ -43,6 +44,24 @@ export default function MonthView({
   const [tooltipContent, setTooltipContent] = useState("");
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+  
+  // Helper function to determine if a day is a weekend (Saturday or Sunday)
+  const isWeekend = (day: Date) => {
+    return day.getDay() === 0 || day.getDay() === 6;
+  };
+  
+  // Helper function to get day cell class names
+  const getDayCellClassNames = (day: Date) => {
+    return `day-cell border-r last:border-r-0 ${isWeekend(day) ? 'weekend-day' : ''}`;
+  };
+  
+  // Helper function to update all day cells to apply weekend styling
+  const updateDayCell = (day: Date) => ({
+    key: format(day, "yyyy-MM-dd"),
+    'data-date': format(day, "yyyy-MM-dd"),
+    className: `day-cell border-r last:border-r-0 ${isWeekend(day) ? 'weekend-day' : ''}`,
+    style: { width: "40px", minWidth: "40px" },
+  });
   
   const handleActivityMouseEnter = (event: React.MouseEvent, activity: Activity) => {
     const activityStart = new Date(activity.startDate);
@@ -89,6 +108,9 @@ export default function MonthView({
   
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+      {/* Include the WeekendHighlighter component to apply styling to all weekend days */}
+      <WeekendHighlighter />
+      
       <div className="border-b px-4 py-3">
         <h2 className="text-lg font-medium">Month View ({format(monthStart, "MMMM yyyy")})</h2>
       </div>
@@ -100,11 +122,11 @@ export default function MonthView({
             {daysInMonth.map((day: Date) => (
               <div 
                 key={format(day, "yyyy-MM-dd")} 
-                className="day-column text-center py-2 font-medium text-sm border-r last:border-r-0"
+                className={`day-column text-center py-2 font-medium text-sm border-r last:border-r-0 ${isWeekend(day) ? 'bg-red-50' : ''}`}
                 style={{ width: "40px", minWidth: "40px" }}
               >
                 <div>{format(day, "d")}</div>
-                <div className="text-xs text-gray-500">{format(day, "EEE")}</div>
+                <div className={`text-xs ${isWeekend(day) ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>{format(day, "EEE")}</div>
               </div>
             ))}
           </div>

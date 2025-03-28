@@ -126,6 +126,10 @@ function generateHolidaysForYear(region: Region, year: number): Holiday[] {
 }
 
 // Helper function to generate weekend holidays for a specific year
+/**
+ * Generates weekend holidays for a specific year
+ * This creates holiday entries for all Saturdays and Sundays in the specified year
+ */
 function generateWeekendHolidaysForYear(year: number): Holiday[] {
   const weekendHolidays: Holiday[] = [];
   const startDate = new Date(year, 0, 1);  // January 1st of the specified year

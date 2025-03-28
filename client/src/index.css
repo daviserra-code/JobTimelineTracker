@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles for weekend highlighting */
+.weekend-day {
+  background-color: #FEF2F2 !important; /* Red 50 */
+  border-color: #FECACA !important; /* Red 200 */
+}
+
+/* Automatically apply weekend styling to all weekend days */
+.day-cell:nth-child(7n), .day-cell:nth-child(7n+1) {
+  background-color: #FEF2F2 !important; /* Red 50 */
+  border-color: #FECACA !important; /* Red 200 */
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -57,4 +69,9 @@
   .timeline-month {
     min-width: 80px;
   }
+}
+
+/* Weekend day styling */
+.day-cell.weekend-day {
+  background-color: rgba(254, 226, 226, 0.5);
 }
