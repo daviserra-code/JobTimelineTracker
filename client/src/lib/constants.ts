@@ -2,7 +2,7 @@ import { ActivityType, ActivityStatus, Region, ViewMode } from "@shared/schema";
 
 export const ACTIVITY_TYPES: Record<ActivityType, { label: string; color: string }> = {
   project: { label: "Project", color: "bg-[#4caf50]" },
-  meeting: { label: "Meeting", color: "bg-[#9c27b0]" },
+  meeting: { label: "Course Development", color: "bg-[#9c27b0]" },
   training: { label: "Training", color: "bg-[#ff9800]" },
   holiday: { label: "Holiday", color: "bg-[#f44336]" },
 };

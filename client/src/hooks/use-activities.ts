@@ -93,17 +93,23 @@ export function useActivities(props?: UseActivitiesProps) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, activity }: { id: number, activity: Partial<Activity> }) => {
       const response = await apiRequest("PATCH", `/api/activities/${id}`, activity);
+      // Check if the response is ok before trying to parse JSON
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
       const data = await response.json();
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       toast({
         title: "Success",
         description: "Activity updated successfully",
       });
     },
     onError: (error) => {
+      console.error("Update activity error:", error);
       toast({
         title: "Error",
         description: `Failed to update activity: ${error.message}`,

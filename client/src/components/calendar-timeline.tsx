@@ -50,7 +50,20 @@ export function TimelineActivityRow({ title, activities, year }: TimelineActivit
     const activityStart = new Date(activity.startDate);
     const activityEnd = new Date(activity.endDate);
     
-    const content = `${activity.title} (${ACTIVITY_TYPES[activity.type as keyof typeof ACTIVITY_TYPES].label}) - ${format(activityStart, "MMM d, yyyy")} to ${format(activityEnd, "MMM d, yyyy")}`;
+    // Include description in the tooltip if available
+    let content = `${activity.title} (${ACTIVITY_TYPES[activity.type as keyof typeof ACTIVITY_TYPES].label}) - ${format(activityStart, "MMM d, yyyy")} to ${format(activityEnd, "MMM d, yyyy")}`;
+    
+    if (activity.description) {
+      content += `\nDescription: ${activity.description}`;
+    }
+    
+    if (activity.location) {
+      content += `\nLocation: ${activity.location}`;
+    }
+    
+    if (activity.category) {
+      content += `\nCategory: ${activity.category}`;
+    }
     
     setTooltipContent(content);
     
@@ -105,7 +118,7 @@ export function TimelineActivityRow({ title, activities, year }: TimelineActivit
       
       {isTooltipVisible && (
         <div
-          className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
+          className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg max-w-[300px] whitespace-pre-wrap"
           style={{
             left: `${tooltipPosition.x}px`,
             top: `${tooltipPosition.y}px`,
@@ -183,7 +196,7 @@ export default function TimelineView({
             )}
             
             {meetingActivities.length > 0 && (
-              <TimelineActivityRow title="Meetings" activities={meetingActivities} year={year} />
+              <TimelineActivityRow title="Course Development" activities={meetingActivities} year={year} />
             )}
             
             {holidayActivities.length > 0 && (

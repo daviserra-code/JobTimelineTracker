@@ -69,7 +69,20 @@ export default function DayView({
     const type = activity.type as keyof typeof ACTIVITY_TYPES;
     const { label } = ACTIVITY_TYPES[type];
     
-    const content = `${activity.title} (${label}) - ${format(activityStart, "h:mm a")} to ${format(activityEnd, "h:mm a")}`;
+    // Include description in the tooltip if available
+    let content = `${activity.title} (${label}) - ${format(activityStart, "h:mm a")} to ${format(activityEnd, "h:mm a")}`;
+    
+    if (activity.description) {
+      content += `\nDescription: ${activity.description}`;
+    }
+    
+    if (activity.location) {
+      content += `\nLocation: ${activity.location}`;
+    }
+    
+    if (activity.category) {
+      content += `\nCategory: ${activity.category}`;
+    }
     
     setTooltipContent(content);
     
@@ -197,7 +210,7 @@ export default function DayView({
           {/* Tooltip */}
           {isTooltipVisible && (
             <div
-              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
+              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg max-w-[300px] whitespace-pre-wrap"
               style={{
                 left: `${tooltipPosition.x}px`,
                 top: `${tooltipPosition.y}px`,

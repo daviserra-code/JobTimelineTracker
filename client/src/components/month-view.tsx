@@ -48,7 +48,20 @@ export default function MonthView({
     const activityStart = new Date(activity.startDate);
     const activityEnd = new Date(activity.endDate);
     
-    const content = `${activity.title} (${ACTIVITY_TYPES[activity.type as keyof typeof ACTIVITY_TYPES].label}) - ${format(activityStart, "MMM d, yyyy")} to ${format(activityEnd, "MMM d, yyyy")}`;
+    // Include description in the tooltip if available
+    let content = `${activity.title} (${ACTIVITY_TYPES[activity.type as keyof typeof ACTIVITY_TYPES].label}) - ${format(activityStart, "MMM d, yyyy")} to ${format(activityEnd, "MMM d, yyyy")}`;
+    
+    if (activity.description) {
+      content += `\nDescription: ${activity.description}`;
+    }
+    
+    if (activity.location) {
+      content += `\nLocation: ${activity.location}`;
+    }
+    
+    if (activity.category) {
+      content += `\nCategory: ${activity.category}`;
+    }
     
     setTooltipContent(content);
     
@@ -157,7 +170,7 @@ export default function MonthView({
             
             {meetingActivities.length > 0 && (
               <div className="activity-row border-b py-3">
-                <div className="font-medium mb-2">Meetings</div>
+                <div className="font-medium mb-2">Course Development</div>
                 <div className="relative h-6 flex">
                   {daysInMonth.map((day: Date) => (
                     <div 
@@ -452,7 +465,7 @@ export default function MonthView({
           {/* Tooltip */}
           {isTooltipVisible && (
             <div
-              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg"
+              className="fixed bg-gray-800 text-white px-3 py-1.5 rounded text-xs z-50 shadow-lg max-w-[300px] whitespace-pre-wrap"
               style={{
                 left: `${tooltipPosition.x}px`,
                 top: `${tooltipPosition.y}px`,
