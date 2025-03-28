@@ -333,6 +333,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Dashboard Routes
+  
+  // Get dashboard statistics based on activities
+  app.get("/api/dashboard/stats", async (_req, res) => {
+    try {
+      const activities = await storage.getAllActivities();
+      
+      // Calculate statistics
+      const stats = {
+        totalActivities: activities.length,
+        byType: activities.reduce((acc: Record<string, number>, activity) => {
+          acc[activity.type] = (acc[activity.type] || 0) + 1;
+          return acc;
+        }, {}),
+        byStatus: activities.reduce((acc: Record<string, number>, activity) => {
+          if (activity.status) {
+            acc[activity.status] = (acc[activity.status] || 0) + 1;
+          }
+          return acc;
+        }, {}),
+        byMonth: activities.reduce((acc: Record<string, number>, activity) => {
+          if (activity.startDate) {
+            const date = new Date(activity.startDate);
+            const month = date.toLocaleString('default', { month: 'short' });
+            acc[month] = (acc[month] || 0) + 1;
+          }
+          return acc;
+        }, {}),
+        byCategory: activities.reduce((acc: Record<string, number>, activity) => {
+          if (activity.category) {
+            acc[activity.category] = (acc[activity.category] || 0) + 1;
+          }
+          return acc;
+        }, {})
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching dashboard statistics: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
   // Holidays Routes
   
   // Get holidays for specific year and regions

@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import AccountPage from "@/pages/account";
+import DashboardPage from "./pages/dashboard";
 import Header from "@/components/header";
 import MobileNav from "@/components/mobile-nav";
 import { OnboardingTour } from "@/components/onboarding-tour";
@@ -147,6 +148,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/account" component={AccountPage} />
+          <Route path="/dashboard" component={DashboardPage} />
           <Route component={NotFound} />
         </Switch>
       </div>

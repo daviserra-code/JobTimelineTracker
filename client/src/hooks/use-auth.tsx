@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { UserRole } from "../../shared/schema";
+import { UserRole } from "@shared/schema";
 import React, { createContext, useContext, ReactNode } from "react";
 
 interface User {

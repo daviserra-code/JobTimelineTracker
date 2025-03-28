@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings } from "lucide-react";
+import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings, BarChart2 } from "lucide-react";
 import HelpMenu from "@/components/help-menu";
 import UserPreferencesDialog from "@/components/user-preferences-dialog";
 
@@ -37,6 +37,17 @@ export default function Header() {
                 <Download className="mr-2 h-4 w-4" />
                 <span>Import/Export</span>
               </Button>
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                asChild
+              >
+                <Link href="/dashboard">
+                  <BarChart2 className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </Button>
+              
               <Button 
                 variant="ghost" 
                 className="text-white hover:bg-[rgba(255,255,255,0.1)]"
@@ -107,6 +118,14 @@ export default function Header() {
                     <a className="flex items-center p-2 rounded hover:bg-gray-100">
                       <Download className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Import/Export</span>
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard">
+                    <a className="flex items-center p-2 rounded hover:bg-gray-100">
+                      <BarChart2 className="mr-3 h-5 w-5 text-gray-600" />
+                      <span>Dashboard</span>
                     </a>
                   </Link>
                 </li>
