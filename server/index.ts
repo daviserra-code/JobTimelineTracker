@@ -74,7 +74,6 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`Server is running at http://0.0.0.0:${port}`);
-    log(`Dashboard test page available at http://0.0.0.0:${port}/dashboard-test`);
+    log(`serving on port ${port}`);
   });
 })();
