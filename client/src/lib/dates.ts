@@ -212,15 +212,14 @@ export const getAllISOWeeksForYear = (year: number) => {
 
 /**
  * Get today's date information for navigation
- * Returns an object with today's year, month, week number, and day
+ * Returns an object with today's year, month, ISO week number, and day
  */
 export const getTodayInfo = () => {
   const today = new Date();
   return {
     year: today.getFullYear(),
     month: today.getMonth(),
-    week: getCurrentWeekInMonth(today),
-    isoWeek: getISOWeek(today),
+    week: getISOWeek(today), // Using ISO week number instead of month-relative week
     day: today.getDate()
   };
 };

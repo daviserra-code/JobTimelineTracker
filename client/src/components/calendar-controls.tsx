@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ViewMode } from "@shared/schema";
 import { VIEW_MODES, YEARS, MONTHS } from "@/lib/constants";
-import { format, getDaysInMonth, startOfMonth, endOfMonth, eachWeekOfInterval } from "date-fns";
+import { format, getDaysInMonth, startOfMonth, endOfMonth, eachWeekOfInterval, getISOWeek, setISOWeek, getISOWeeksInYear } from "date-fns";
+import { getISOWeekNumber, getAllISOWeeksForYear } from "@/lib/dates";
 
 interface CalendarControlsProps {
   currentYear: number;
@@ -47,19 +48,17 @@ export default function CalendarControls({
       }
     } else if (currentViewMode === "week") {
       if (currentWeek > 1) {
+        // Just go to the previous ISO week
         onWeekChange(currentWeek - 1);
-      } else if (currentMonth > 0) {
-        onMonthChange(currentMonth - 1);
-        // Set to last week of previous month
-        const prevMonthDate = new Date(currentYear, currentMonth - 1, 1);
-        const weekCount = getWeeksInMonth(prevMonthDate);
-        onWeekChange(weekCount);
-      } else if (currentYear > YEARS[0]) {
-        onYearChange(currentYear - 1);
-        onMonthChange(11);
-        const decDate = new Date(currentYear - 1, 11, 1);
-        const weekCount = getWeeksInMonth(decDate);
-        onWeekChange(weekCount);
+      } else {
+        // We're at week 1, so we need to go to the last week of the previous year
+        if (currentYear > YEARS[0]) {
+          const prevYear = currentYear - 1;
+          // Last ISO week of the previous year (can be 52 or 53)
+          const lastWeekOfPrevYear = getISOWeeksInYear(new Date(prevYear, 0, 1));
+          onYearChange(prevYear);
+          onWeekChange(lastWeekOfPrevYear);
+        }
       }
     } else if (currentViewMode === "day") {
       if (currentDay > 1) {
@@ -90,16 +89,18 @@ export default function CalendarControls({
         onMonthChange(0); // January of next year
       }
     } else if (currentViewMode === "week") {
-      const weekCount = getWeeksInMonth(new Date(currentYear, currentMonth));
-      if (currentWeek < weekCount) {
+      // Using ISO week numbers throughout the year
+      const weeksInCurrentYear = getISOWeeksInYear(new Date(currentYear, 0, 1));
+      
+      if (currentWeek < weeksInCurrentYear) {
+        // Simply go to the next ISO week in the same year
         onWeekChange(currentWeek + 1);
-      } else if (currentMonth < 11) {
-        onMonthChange(currentMonth + 1);
-        onWeekChange(1); // First week of next month
-      } else if (currentYear < YEARS[YEARS.length - 1]) {
-        onYearChange(currentYear + 1);
-        onMonthChange(0);
-        onWeekChange(1);
+      } else {
+        // We're at the last week of the year, so move to week 1 of next year
+        if (currentYear < YEARS[YEARS.length - 1]) {
+          onYearChange(currentYear + 1);
+          onWeekChange(1); // First ISO week of the next year
+        }
       }
     } else if (currentViewMode === "day") {
       const daysInMonth = getDaysInMonth(new Date(currentYear, currentMonth));
@@ -168,7 +169,7 @@ export default function CalendarControls({
               <span className="text-lg font-medium">
                 {currentViewMode === "timeline" && currentYear}
                 {currentViewMode === "month" && `${MONTHS[currentMonth]} ${currentYear}`}
-                {currentViewMode === "week" && `Week ${currentWeek}, ${MONTHS[currentMonth]} ${currentYear}`}
+                {currentViewMode === "week" && `ISO Week ${currentWeek}, ${currentYear}`}
                 {currentViewMode === "day" && format(new Date(currentYear, currentMonth, currentDay), "MMMM d, yyyy")}
               </span>
               <Button 
@@ -260,10 +261,10 @@ export default function CalendarControls({
           </div>
         )}
         
-        {/* Week tabs for week view */}
+        {/* Week tabs for week view - using ISO week numbers for the whole year */}
         {currentViewMode === "week" && (
           <div className="flex overflow-x-auto">
-            {Array.from({ length: getWeeksInMonth(new Date(currentYear, currentMonth)) }).map((_, index) => (
+            {Array.from({ length: getISOWeeksInYear(new Date(currentYear, 0, 1)) }).map((_, index) => (
               <button
                 key={`week-${index + 1}`}
                 onClick={() => onWeekChange(index + 1)}
