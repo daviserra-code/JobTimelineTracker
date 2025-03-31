@@ -188,27 +188,23 @@ export default function Header() {
                   </button>
                 </li>
                 <li>
-                  <Link href="/">
-                    <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <Bell className="mr-3 h-5 w-5 text-gray-600" />
-                      <span>Notifications</span>
-                    </a>
-                  </Link>
+                  <button className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left">
+                    <Bell className="mr-3 h-5 w-5 text-gray-600" />
+                    <span>Notifications</span>
+                  </button>
                 </li>
                 <li>
-                  <Link href="/">
-                    <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <Download className="mr-3 h-5 w-5 text-gray-600" />
-                      <span>Import/Export</span>
-                    </a>
-                  </Link>
+                  <button className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left">
+                    <Download className="mr-3 h-5 w-5 text-gray-600" />
+                    <span>Import/Export</span>
+                  </button>
                 </li>
                 <li>
                   <Link href="/account">
-                    <a className="flex items-center p-2 rounded hover:bg-gray-100">
+                    <div className="flex items-center p-2 rounded hover:bg-gray-100">
                       <User className="mr-3 h-5 w-5 text-gray-600" />
                       <span>Account</span>
-                    </a>
+                    </div>
                   </Link>
                 </li>
                 <li>
@@ -224,12 +220,10 @@ export default function Header() {
                   </button>
                 </li>
                 <li className="pt-4 border-t mt-4">
-                  <Link href="/">
-                    <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <HelpCircle className="mr-3 h-5 w-5 text-gray-600" />
-                      <span>Help & Support</span>
-                    </a>
-                  </Link>
+                  <button className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left">
+                    <HelpCircle className="mr-3 h-5 w-5 text-gray-600" />
+                    <span>Help & Support</span>
+                  </button>
                 </li>
                 
                 <li className="mt-4">
@@ -247,10 +241,10 @@ export default function Header() {
                     </button>
                   ) : (
                     <Link href="/login">
-                      <a className="flex items-center p-2 rounded hover:bg-gray-100">
+                      <div className="flex items-center p-2 rounded hover:bg-gray-100">
                         <LogIn className="mr-3 h-5 w-5 text-gray-600" />
                         <span>Admin Login</span>
-                      </a>
+                      </div>
                     </Link>
                   )}
                 </li>
