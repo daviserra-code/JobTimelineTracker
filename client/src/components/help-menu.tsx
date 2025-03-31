@@ -56,7 +56,7 @@ export default function HelpMenu() {
         
         <DropdownMenuItem className="cursor-pointer flex items-center">
           <Info className="mr-2 h-4 w-4" />
-          <span>About Activity Calendar</span>
+          <span>About Activity Calendar of Davide Serra</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

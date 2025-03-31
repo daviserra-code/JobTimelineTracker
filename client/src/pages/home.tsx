@@ -18,9 +18,11 @@ import DeleteActivityDialog from "@/components/delete-activity-dialog";
 import { ActivityFilters } from "@/components/activity-filters";
 import type { ActivityFilters as ActivityFiltersType } from "@/components/activity-filters";
 import MobileNav from "@/components/mobile-nav";
+import { useLocation } from "wouter";
 
 export default function Home() {
   const isMobile = useMobile();
+  const [location, setLocation] = useLocation();
   
   // State for calendar controls
   const [currentYear, setCurrentYear] = useState(2025);
@@ -35,6 +37,7 @@ export default function Home() {
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<ActivityFiltersType | null>(null);
+  const [highlightToday, setHighlightToday] = useState(false);
   
   // Get activities and holidays data with optional filtering
   const { activities, isLoading: activitiesLoading } = useActivities(
@@ -51,6 +54,51 @@ export default function Home() {
     if (zoomLevel > 0.5) setZoomLevel(zoomLevel - 0.25);
   };
   
+  // Effect to parse URL parameters 
+  useEffect(() => {
+    // Check if we have URL parameters that indicate we should navigate to today's date
+    const params = new URLSearchParams(window.location.search);
+    
+    // Parse the view parameter
+    const viewParam = params.get('view');
+    if (viewParam && ['timeline', 'month', 'week', 'day'].includes(viewParam)) {
+      setViewMode(viewParam as ViewMode);
+    }
+    
+    // Parse year, month, week, and day parameters
+    const yearParam = params.get('year');
+    if (yearParam && !isNaN(Number(yearParam))) {
+      setCurrentYear(Number(yearParam));
+    }
+    
+    const monthParam = params.get('month');
+    if (monthParam && !isNaN(Number(monthParam))) {
+      setCurrentMonth(Number(monthParam));
+    }
+    
+    const weekParam = params.get('week');
+    if (weekParam && !isNaN(Number(weekParam))) {
+      setCurrentWeek(Number(weekParam));
+    }
+    
+    const dayParam = params.get('day');
+    if (dayParam && !isNaN(Number(dayParam))) {
+      setCurrentDay(Number(dayParam));
+    }
+    
+    // Check if we should highlight today
+    const todayParam = params.get('today');
+    if (todayParam === 'true') {
+      setHighlightToday(true);
+    }
+    
+    // Clear URL parameters after processing to avoid reprocessing on subsequent renders
+    if (location.includes('?')) {
+      // Use window.history to update the URL without causing a reload
+      window.history.replaceState({}, '', location.split('?')[0]);
+    }
+  }, [location]);
+
   // Effect to update CSS variables based on zoom level
   useEffect(() => {
     const timelineMonths = document.querySelectorAll(".timeline-month");
@@ -192,6 +240,7 @@ export default function Home() {
             year={currentYear}
             month={currentMonth}
             weekNumber={currentWeek}
+            highlightToday={highlightToday}
             onActivityClick={handleActivityClick}
             onActivityContextMenu={handleActivityContextMenu}
           />

@@ -2,13 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles for weekend highlighting */
+/* 
+ * Weekend Highlighting Styles
+ * ===========================
+ * These styles apply red background colors to weekend days (Saturday and Sunday)
+ * across all calendar views. The highlighting makes it easy to identify non-working days.
+ */
+
+/* Base style for weekend days (applied by WeekendHighlighter component) */
 .weekend-day {
   background-color: #FEF2F2 !important; /* Red 50 */
   border-color: #FECACA !important; /* Red 200 */
 }
 
-/* Automatically apply weekend styling to all weekend days */
+/* 
+ * CSS-only approach using nth-child selectors
+ * This is a redundant approach that works even if JavaScript fails
+ * Selects the 7n (Saturday) and 7n+1 (Sunday) elements in calendar grids
+ */
 .day-cell:nth-child(7n), .day-cell:nth-child(7n+1) {
   background-color: #FEF2F2 !important; /* Red 50 */
   border-color: #FECACA !important; /* Red 200 */

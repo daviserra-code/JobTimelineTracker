@@ -113,7 +113,7 @@ export default function LoginPage() {
         
         {/* Right side - App description */}
         <div className="hidden md:block bg-primary p-8 text-white rounded-r-lg">
-          <h2 className="text-3xl font-bold mb-6">Activity Calendar</h2>
+          <h2 className="text-3xl font-bold mb-6">Activity Calendar of Davide Serra</h2>
           <p className="text-lg mb-4">
             A comprehensive timeline-based calendar application for managing and visualizing professional activities.
           </p>

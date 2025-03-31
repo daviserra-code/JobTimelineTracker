@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 
-// Helper function to determine if a day is a weekend (Saturday or Sunday)
+/**
+ * Helper function to determine if a day is a weekend (Saturday or Sunday)
+ * @param day - The date to check
+ * @returns true if the day is Saturday (6) or Sunday (0)
+ */
 export const isWeekend = (day: Date) => {
   return day.getDay() === 0 || day.getDay() === 6;
 };

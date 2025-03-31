@@ -158,22 +158,36 @@ function generateWeekendHolidaysForYear(year: number): Holiday[] {
   return weekendHolidays;
 }
 
+/**
+ * Gets all holidays for a specific year across selected regions
+ * 
+ * This function retrieves:
+ * 1. Weekend holidays (Saturday & Sunday) for all years
+ * 2. Region-specific holidays from STATIC_HOLIDAYS if available
+ * 3. Dynamically generated holidays if not found in STATIC_HOLIDAYS
+ * 
+ * @param year - The year to get holidays for (e.g., 2025)
+ * @param regions - Array of region codes to include holidays from (e.g., ["italy", "europe"])
+ * @returns Promise resolving to an array of Holiday objects
+ */
 export async function getHolidaysForYear(year: number, regions: string[]): Promise<Holiday[]> {
   const holidays: Holiday[] = [];
   
   // Generate weekend holidays for all regions
+  // Weekend holidays are always included regardless of selected regions
   const weekendHolidays = generateWeekendHolidaysForYear(year);
   holidays.push(...weekendHolidays);
   
-  // Add regular holidays from the regions
+  // Add regular holidays from the requested regions
   for (const region of regions) {
     if (region in STATIC_HOLIDAYS) {
       const regionHolidays = STATIC_HOLIDAYS[region as Region][year];
       
       if (regionHolidays) {
+        // Use predefined holidays if available
         holidays.push(...regionHolidays);
       } else {
-        // If we don't have data for this year, generate it
+        // If we don't have data for this year, generate it dynamically
         const generatedHolidays = generateHolidaysForYear(region as Region, year);
         holidays.push(...generatedHolidays);
       }

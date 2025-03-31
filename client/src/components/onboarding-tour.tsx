@@ -9,7 +9,7 @@ const steps = [
     selector: '.tour-home',
     content: (
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Welcome to Activity Calendar!</h3>
+        <h3 className="text-lg font-semibold">Welcome to Activity Calendar of Davide Serra!</h3>
         <p>This tour will show you how to use the application and its features.</p>
         <p>Click "Next" to continue or "Skip" to exit the tour.</p>
       </div>
@@ -120,7 +120,7 @@ const steps = [
     content: (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold">You're All Set!</h3>
-        <p>You've completed the tour and are ready to use the Activity Calendar.</p>
+        <p>You've completed the tour and are ready to use the Activity Calendar of Davide Serra.</p>
         <p>You can restart this tour anytime from the help menu if you need a refresher.</p>
         <div className="flex justify-center mt-4">
           <span className="inline-block animate-bounce bg-primary text-primary-foreground rounded-full p-2">

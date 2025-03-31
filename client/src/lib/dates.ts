@@ -1,4 +1,18 @@
-import { addDays, addMonths, format, startOfDay, endOfDay, isWithinInterval, isBefore, isAfter, differenceInDays, eachDayOfInterval } from 'date-fns';
+import { 
+  addDays, 
+  addMonths, 
+  format, 
+  startOfDay, 
+  endOfDay, 
+  isWithinInterval, 
+  isBefore, 
+  isAfter, 
+  differenceInDays, 
+  eachDayOfInterval,
+  startOfWeek,
+  getWeek,
+  getWeeksInMonth
+} from 'date-fns';
 import { Activity, TimelineActivity } from './types';
 
 // Generate range of years
@@ -125,4 +139,33 @@ export const calculateNotificationDate = (
   leadTime: number
 ): Date => {
   return addDays(activityDate, -leadTime);
+};
+
+/**
+ * Get the current week number within the current month
+ * This is a 1-based index (first week is 1, not 0)
+ */
+export const getCurrentWeekInMonth = (date: Date = new Date()): number => {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  const firstWeekStart = startOfWeek(firstDayOfMonth);
+  
+  // Calculate days between the first day of first week and today
+  const daysSinceFirstWeek = differenceInDays(date, firstWeekStart);
+  
+  // Calculate the week number (1-based)
+  return Math.floor(daysSinceFirstWeek / 7) + 1;
+};
+
+/**
+ * Get today's date information for navigation
+ * Returns an object with today's year, month, week number, and day
+ */
+export const getTodayInfo = () => {
+  const today = new Date();
+  return {
+    year: today.getFullYear(),
+    month: today.getMonth(),
+    week: getCurrentWeekInMonth(today),
+    day: today.getDate()
+  };
 };

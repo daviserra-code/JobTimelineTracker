@@ -10,6 +10,7 @@ interface WeekViewProps {
   year: number;
   month: number;
   weekNumber: number; // 1-5 representing the week of the month
+  highlightToday?: boolean;
   onActivityClick?: (activity: Activity) => void;
   onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
@@ -20,6 +21,7 @@ export default function WeekView({
   year,
   month,
   weekNumber,
+  highlightToday = false,
   onActivityClick,
   onActivityContextMenu
 }: WeekViewProps) {
@@ -86,6 +88,25 @@ export default function WeekView({
     setIsTooltipVisible(false);
   };
   
+  // Get today's date for highlighting if needed
+  const today = new Date();
+  const todayString = format(today, "yyyy-MM-dd");
+  
+  // Helper function to create day cell with highlighting
+  const renderDayCell = (day: Date) => {
+    const dayString = format(day, "yyyy-MM-dd");
+    const isToday = dayString === todayString;
+    const shouldHighlight = highlightToday && isToday;
+    
+    return (
+      <div 
+        key={dayString} 
+        className={`day-cell border-r last:border-r-0 ${shouldHighlight ? 'bg-blue-50' : ''}`}
+        style={{ width: "100px", minWidth: "100px" }}
+      ></div>
+    );
+  };
+  
   // Group activities by activity type
   const projectActivities = visibleActivities.filter(a => a.type === 'project');
   const courseDevActivities = visibleActivities.filter(a => a.type === 'meeting');
@@ -104,16 +125,22 @@ export default function WeekView({
         <div className="min-w-max p-4">
           {/* Days of week header */}
           <div className="flex border-b">
-            {daysInWeek.map((day) => (
-              <div 
-                key={format(day, "yyyy-MM-dd")} 
-                className="day-column text-center py-2 font-medium text-sm border-r last:border-r-0"
-                style={{ width: "100px", minWidth: "100px" }}
-              >
-                <div>{format(day, "d")}</div>
-                <div className="text-xs text-gray-500">{format(day, "EEE")}</div>
-              </div>
-            ))}
+            {daysInWeek.map((day) => {
+              const dayString = format(day, "yyyy-MM-dd");
+              const isToday = dayString === todayString;
+              const shouldHighlight = highlightToday && isToday;
+              
+              return (
+                <div 
+                  key={dayString} 
+                  className={`day-column text-center py-2 font-medium text-sm border-r last:border-r-0 ${shouldHighlight ? 'bg-blue-100 border-blue-500 border-b-2' : ''}`}
+                  style={{ width: "100px", minWidth: "100px" }}
+                >
+                  <div className={shouldHighlight ? 'text-blue-600 font-bold' : ''}>{format(day, "d")}</div>
+                  <div className={`text-xs ${shouldHighlight ? 'text-blue-500 font-semibold' : 'text-gray-500'}`}>{format(day, "EEE")}</div>
+                </div>
+              );
+            })}
           </div>
           
           {/* Activity rows by type */}
@@ -122,13 +149,19 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Projects</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => (
-                    <div 
-                      key={format(day, "yyyy-MM-dd")} 
-                      className="day-cell border-r last:border-r-0"
-                      style={{ width: "100px", minWidth: "100px" }}
-                    ></div>
-                  ))}
+                  {daysInWeek.map((day) => {
+                    const dayString = format(day, "yyyy-MM-dd");
+                    const isToday = dayString === todayString;
+                    const shouldHighlight = highlightToday && isToday;
+                    
+                    return (
+                      <div 
+                        key={dayString} 
+                        className={`day-cell border-r last:border-r-0 ${shouldHighlight ? 'bg-blue-50' : ''}`}
+                        style={{ width: "100px", minWidth: "100px" }}
+                      ></div>
+                    );
+                  })}
                   
                   {projectActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
@@ -178,13 +211,7 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Course Development</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => (
-                    <div 
-                      key={format(day, "yyyy-MM-dd")} 
-                      className="day-cell border-r last:border-r-0"
-                      style={{ width: "100px", minWidth: "100px" }}
-                    ></div>
-                  ))}
+                  {daysInWeek.map(renderDayCell)}
                   
                   {courseDevActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
@@ -234,13 +261,7 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Confirmed Activities</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => (
-                    <div 
-                      key={format(day, "yyyy-MM-dd")} 
-                      className="day-cell border-r last:border-r-0"
-                      style={{ width: "100px", minWidth: "100px" }}
-                    ></div>
-                  ))}
+                  {daysInWeek.map(renderDayCell)}
                   
                   {confirmedActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
@@ -290,13 +311,7 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Tentative Activities</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => (
-                    <div 
-                      key={format(day, "yyyy-MM-dd")} 
-                      className="day-cell border-r last:border-r-0"
-                      style={{ width: "100px", minWidth: "100px" }}
-                    ></div>
-                  ))}
+                  {daysInWeek.map(renderDayCell)}
                   
                   {tentativeActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
@@ -346,13 +361,7 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Hypothetical Activities</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => (
-                    <div 
-                      key={format(day, "yyyy-MM-dd")} 
-                      className="day-cell border-r last:border-r-0"
-                      style={{ width: "100px", minWidth: "100px" }}
-                    ></div>
-                  ))}
+                  {daysInWeek.map(renderDayCell)}
                   
                   {hypotheticalActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
@@ -402,13 +411,7 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Holidays</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => (
-                    <div 
-                      key={format(day, "yyyy-MM-dd")} 
-                      className="day-cell border-r last:border-r-0"
-                      style={{ width: "100px", minWidth: "100px" }}
-                    ></div>
-                  ))}
+                  {daysInWeek.map(renderDayCell)}
                   
                   {holidayActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);

@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { getTodayInfo } from "@/lib/dates";
 
 export default function Header() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -53,10 +54,29 @@ export default function Header() {
               <button onClick={toggleDrawer} className="mr-2 md:hidden">
                 <Menu className="h-6 w-6" />
               </button>
-              <h1 className="text-xl font-medium">Activity Calendar</h1>
+              <h1 className="text-xl font-medium">Activity Calendar of Davide Serra</h1>
             </div>
             <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                onClick={() => {
+                  // Get today's information
+                  const today = getTodayInfo();
+                  
+                  // Use URLSearchParams to create the query string for navigation
+                  const params = new URLSearchParams();
+                  params.set('view', 'week');
+                  params.set('year', today.year.toString());
+                  params.set('month', today.month.toString());
+                  params.set('week', today.week.toString());
+                  params.set('day', today.day.toString());
+                  params.set('today', 'true'); // Flag to indicate we want to highlight today
+                  
+                  // Navigate to home with query parameters
+                  setLocation(`/?${params.toString()}`);
+                }}
+              >
                 <CalendarDays className="mr-2 h-4 w-4" />
                 <span>Today</span>
               </Button>
@@ -136,17 +156,36 @@ export default function Header() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b">
-              <h2 className="text-lg font-medium text-primary">Activity Calendar</h2>
+              <h2 className="text-lg font-medium text-primary">Activity Calendar of Davide Serra</h2>
             </div>
             <nav className="p-4">
               <ul className="space-y-2">
                 <li>
-                  <Link href="/">
-                    <a className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <CalendarDays className="mr-3 h-5 w-5 text-gray-600" />
-                      <span>Today</span>
-                    </a>
-                  </Link>
+                  <button 
+                    className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                    onClick={() => {
+                      // Close the drawer
+                      setIsDrawerOpen(false);
+                      
+                      // Get today's information
+                      const today = getTodayInfo();
+                      
+                      // Use URLSearchParams to create the query string for navigation
+                      const params = new URLSearchParams();
+                      params.set('view', 'week');
+                      params.set('year', today.year.toString());
+                      params.set('month', today.month.toString());
+                      params.set('week', today.week.toString());
+                      params.set('day', today.day.toString());
+                      params.set('today', 'true'); // Flag to indicate we want to highlight today
+                      
+                      // Navigate to home with query parameters
+                      setLocation(`/?${params.toString()}`);
+                    }}
+                  >
+                    <CalendarDays className="mr-3 h-5 w-5 text-gray-600" />
+                    <span>Today</span>
+                  </button>
                 </li>
                 <li>
                   <Link href="/">
