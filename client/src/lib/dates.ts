@@ -11,7 +11,9 @@ import {
   eachDayOfInterval,
   startOfWeek,
   getWeek,
-  getWeeksInMonth
+  getWeeksInMonth,
+  getISOWeek,
+  getISOWeekYear
 } from 'date-fns';
 import { Activity, TimelineActivity } from './types';
 
@@ -157,6 +159,58 @@ export const getCurrentWeekInMonth = (date: Date = new Date()): number => {
 };
 
 /**
+ * Get the ISO week number for a date (1-53)
+ * ISO weeks start on Monday and the first week of the year
+ * is the week that contains the first Thursday of the year
+ */
+export const getISOWeekNumber = (date: Date): number => {
+  return getISOWeek(date);
+};
+
+/**
+ * Get the ISO week year for a date
+ * This may differ from the calendar year for days at the
+ * beginning or end of the year
+ */
+export const getISOWeekYearNumber = (date: Date): number => {
+  return getISOWeekYear(date);
+};
+
+/**
+ * Gets all ISO week numbers for a given year
+ * Returns an array of objects with week number and start date
+ */
+export const getAllISOWeeksForYear = (year: number) => {
+  // Start from January 1st of the year
+  let currentDate = new Date(year, 0, 1);
+  const weeks = [];
+  let weekNumber;
+  let weekYear;
+  
+  // Continue until we reach the next year
+  do {
+    weekNumber = getISOWeek(currentDate);
+    weekYear = getISOWeekYear(currentDate);
+    
+    // Only include weeks that belong to the requested year
+    if (weekYear === year) {
+      weeks.push({
+        weekNumber,
+        startDate: new Date(currentDate)
+      });
+      
+      // Move to next Monday
+      currentDate.setDate(currentDate.getDate() + (8 - currentDate.getDay()) % 7);
+    } else {
+      // Move one day forward to potentially catch the first week of the year
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  } while (weekYear <= year);
+  
+  return weeks;
+};
+
+/**
  * Get today's date information for navigation
  * Returns an object with today's year, month, week number, and day
  */
@@ -166,6 +220,7 @@ export const getTodayInfo = () => {
     year: today.getFullYear(),
     month: today.getMonth(),
     week: getCurrentWeekInMonth(today),
+    isoWeek: getISOWeek(today),
     day: today.getDate()
   };
 };

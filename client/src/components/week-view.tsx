@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, getISOWeek, setISOWeek } from "date-fns";
 import { Activity, Holiday } from "@shared/schema";
 import { ACTIVITY_TYPES } from "@/lib/constants";
 import { getContrastTextColor } from "@/lib/utils";
+import { getISOWeekNumber } from "@/lib/dates";
 
 interface WeekViewProps {
   activities: Activity[];
   holidays: Holiday[];
   year: number;
   month: number;
-  weekNumber: number; // 1-5 representing the week of the month
+  weekNumber: number; // ISO week number (1-53) for the year
   highlightToday?: boolean;
   onActivityClick?: (activity: Activity) => void;
   onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
@@ -25,13 +26,17 @@ export default function WeekView({
   onActivityClick,
   onActivityContextMenu
 }: WeekViewProps) {
-  // Calculate the week's start and end date
-  const monthStart = new Date(year, month, 1);
-  const firstDayOfMonth = startOfWeek(monthStart);
-  // Adjust to get the correct week within the month
-  const weekStart = addDays(firstDayOfMonth, (weekNumber - 1) * 7);
-  const weekEnd = endOfWeek(weekStart);
+  // Calculate the week's start and end date using ISO week numbers
+  // Create a date in the specified year
+  const baseDate = new Date(year, 0, 1); // January 1st of the year
+  
+  // Set the ISO week
+  const weekStart = startOfWeek(setISOWeek(baseDate, weekNumber), { weekStartsOn: 1 }); // Monday
+  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 }); // Sunday
   const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  
+  // Get ISO week number for display
+  const isoWeekNum = getISOWeek(weekStart);
   
   // Filter activities that overlap with the week
   const visibleActivities = activities.filter(activity => {
@@ -110,7 +115,9 @@ export default function WeekView({
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
       <div className="border-b px-4 py-3">
-        <h2 className="text-lg font-medium">Week View ({format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")})</h2>
+        <h2 className="text-lg font-medium">
+          Week View - ISO Week {isoWeekNum} ({format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")})
+        </h2>
       </div>
       
       <div className="overflow-x-auto">

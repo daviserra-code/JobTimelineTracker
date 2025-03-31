@@ -4,6 +4,7 @@ import { useMobile } from "@/hooks/use-mobile";
 import { useActivities } from "@/hooks/use-activities";
 import { useHolidays } from "@/hooks/use-holidays";
 import { YEARS } from "@/lib/constants";
+import { getISOWeekNumber } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import TimelineView from "@/components/timeline-view";
 import MonthView from "@/components/month-view";
@@ -24,11 +25,23 @@ export default function Home() {
   const isMobile = useMobile();
   const [location, setLocation] = useLocation();
   
+  // Get today's date information for initial state
+  const today = new Date();
+  
   // State for calendar controls
+  // Note: We default to 2025 even though we get current date info
+  // This is per requirements to have the timeline start at 2025
   const [currentYear, setCurrentYear] = useState(2025);
-  const [currentMonth, setCurrentMonth] = useState(0); // 0-indexed (January is 0)
-  const [currentWeek, setCurrentWeek] = useState(1); // 1-indexed (Week 1-5 of the month)
-  const [currentDay, setCurrentDay] = useState(1); // 1-indexed (Day of month)
+  
+  // Current month (0-indexed, January is 0)
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  
+  // Get today's ISO week number for the initial state
+  const currentISOWeek = getISOWeekNumber(today);
+  const [currentWeek, setCurrentWeek] = useState(currentISOWeek); // ISO week number (1-53 for the year)
+  
+  // Current day (1-indexed)
+  const [currentDay, setCurrentDay] = useState(today.getDate()); // 1-indexed (Day of month)
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
@@ -141,8 +154,10 @@ export default function Home() {
   };
   
   const changeWeek = (week: number) => {
-    // Weeks are 1-indexed
-    setCurrentWeek(week);
+    // ISO week numbers range from 1-53
+    if (week >= 1 && week <= 53) {
+      setCurrentWeek(week);
+    }
   };
   
   const changeDay = (day: number) => {
