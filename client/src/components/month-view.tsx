@@ -10,6 +10,7 @@ interface MonthViewProps {
   holidays: Holiday[];
   year: number;
   month: number;
+  highlightToday?: boolean;
   onActivityClick?: (activity: Activity) => void;
   onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
@@ -19,6 +20,7 @@ export default function MonthView({
   holidays, 
   year,
   month,
+  highlightToday = false,
   onActivityClick,
   onActivityContextMenu
 }: MonthViewProps) {
@@ -55,13 +57,19 @@ export default function MonthView({
     return `day-cell border-r last:border-r-0 ${isWeekend(day) ? 'weekend-day' : ''}`;
   };
   
-  // Helper function to update all day cells to apply weekend styling
-  const updateDayCell = (day: Date) => ({
-    key: format(day, "yyyy-MM-dd"),
-    'data-date': format(day, "yyyy-MM-dd"),
-    className: `day-cell border-r last:border-r-0 ${isWeekend(day) ? 'weekend-day' : ''}`,
-    style: { width: "40px", minWidth: "40px" },
-  });
+  // Helper function to update all day cells to apply weekend styling and Today highlighting
+  const updateDayCell = (day: Date) => {
+    const dayString = format(day, "yyyy-MM-dd");
+    const isToday = dayString === todayString;
+    const shouldHighlight = highlightToday && isToday;
+    
+    return {
+      key: dayString,
+      'data-date': dayString,
+      className: `day-cell border-r last:border-r-0 ${isWeekend(day) ? 'weekend-day' : ''} ${shouldHighlight ? 'bg-blue-50' : ''}`,
+      style: { width: "40px", minWidth: "40px" },
+    };
+  };
   
   const handleActivityMouseEnter = (event: React.MouseEvent, activity: Activity) => {
     const activityStart = new Date(activity.startDate);
@@ -98,6 +106,25 @@ export default function MonthView({
     setIsTooltipVisible(false);
   };
   
+  // Get today's date for highlighting if needed
+  const today = new Date();
+  const todayString = format(today, "yyyy-MM-dd");
+  
+  // Helper function to render day cells with today highlighting
+  const renderDayCell = (day: Date) => {
+    const dayString = format(day, "yyyy-MM-dd");
+    const isToday = dayString === todayString;
+    const shouldHighlight = highlightToday && isToday;
+    
+    return (
+      <div 
+        key={dayString} 
+        className={`day-cell border-r last:border-r-0 ${shouldHighlight ? 'bg-blue-50' : ''}`}
+        style={{ width: "40px", minWidth: "40px" }}
+      ></div>
+    );
+  };
+  
   // Group activities by activity type
   const projectActivities = visibleActivities.filter((a: Activity) => a.type === 'project');
   const courseDevActivities = visibleActivities.filter((a: Activity) => a.type === 'meeting');
@@ -119,16 +146,26 @@ export default function MonthView({
         <div className="min-w-max p-4">
           {/* Days of month header */}
           <div className="flex border-b">
-            {daysInMonth.map((day: Date) => (
-              <div 
-                key={format(day, "yyyy-MM-dd")} 
-                className={`day-column text-center py-2 font-medium text-sm border-r last:border-r-0 ${isWeekend(day) ? 'bg-red-50' : ''}`}
-                style={{ width: "40px", minWidth: "40px" }}
-              >
-                <div>{format(day, "d")}</div>
-                <div className={`text-xs ${isWeekend(day) ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>{format(day, "EEE")}</div>
-              </div>
-            ))}
+            {daysInMonth.map((day: Date) => {
+              const dayString = format(day, "yyyy-MM-dd");
+              const isToday = dayString === todayString;
+              const shouldHighlight = highlightToday && isToday;
+              
+              return (
+                <div 
+                  key={dayString} 
+                  className={`day-column text-center py-2 font-medium text-sm border-r last:border-r-0 
+                    ${isWeekend(day) ? 'bg-red-50' : ''} 
+                    ${shouldHighlight ? 'bg-blue-100 border-blue-500 border-b-2' : ''}`}
+                  style={{ width: "40px", minWidth: "40px" }}
+                >
+                  <div className={shouldHighlight ? 'text-blue-600 font-bold' : ''}>{format(day, "d")}</div>
+                  <div className={`text-xs ${isWeekend(day) ? 'text-red-500 font-semibold' : 'text-gray-500'} ${shouldHighlight ? 'text-blue-500 font-semibold' : ''}`}>
+                    {format(day, "EEE")}
+                  </div>
+                </div>
+              );
+            })}
           </div>
           
           {/* Activity rows by type */}

@@ -130,6 +130,7 @@ interface TimelineViewProps {
   holidays: Holiday[];
   year: number;
   zoomLevel: number;
+  highlightToday?: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onActivityClick?: (activity: Activity) => void;
@@ -141,6 +142,7 @@ export default function TimelineView({
   holidays, 
   year,
   zoomLevel,
+  highlightToday,
   onZoomIn,
   onZoomOut,
   onActivityClick,

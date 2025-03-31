@@ -214,6 +214,7 @@ export default function Home() {
               holidays={holidaysLoading ? [] : holidays}
               year={currentYear}
               zoomLevel={zoomLevel}
+              highlightToday={highlightToday}
               onZoomIn={handleZoomIn}
               onZoomOut={handleZoomOut}
               onActivityClick={handleActivityClick}
@@ -228,6 +229,7 @@ export default function Home() {
             holidays={holidaysLoading ? [] : holidays}
             year={currentYear}
             month={currentMonth}
+            highlightToday={highlightToday}
             onActivityClick={handleActivityClick}
             onActivityContextMenu={handleActivityContextMenu}
           />
@@ -253,6 +255,7 @@ export default function Home() {
             year={currentYear}
             month={currentMonth}
             day={currentDay}
+            highlightToday={highlightToday}
             onActivityClick={handleActivityClick}
             onActivityContextMenu={handleActivityContextMenu}
           />

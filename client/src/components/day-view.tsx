@@ -10,6 +10,7 @@ interface DayViewProps {
   year: number;
   month: number;
   day: number;
+  highlightToday?: boolean;
   onActivityClick?: (activity: Activity) => void;
   onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
@@ -20,6 +21,7 @@ export default function DayView({
   year,
   month,
   day,
+  highlightToday,
   onActivityClick,
   onActivityContextMenu
 }: DayViewProps) {
@@ -131,14 +133,24 @@ export default function DayView({
     [visibleActivities]
   );
   
+  // Check if we should highlight this day (if it's today and highlightToday is true)
+  const today = new Date();
+  const isToday = format(today, 'yyyy-MM-dd') === format(dayDate, 'yyyy-MM-dd');
+  const shouldHighlight = highlightToday && isToday;
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-      <div className={`border-b px-4 py-3 ${isHoliday ? 'bg-red-50' : ''}`}>
+      <div className={`border-b px-4 py-3 ${isHoliday ? 'bg-red-50' : ''} ${shouldHighlight ? 'bg-blue-100' : ''}`}>
         <h2 className="text-lg font-medium">
           Day View ({format(dayDate, "EEEE, MMMM d, yyyy")})
           {isHoliday && holidayInfo && (
             <span className="ml-2 text-red-600 text-sm font-normal">
               Holiday: {holidayInfo.name}
+            </span>
+          )}
+          {shouldHighlight && (
+            <span className="ml-2 text-blue-600 text-sm font-normal">
+              Today
             </span>
           )}
         </h2>

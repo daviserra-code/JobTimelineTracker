@@ -34,20 +34,12 @@ export default function WeekView({
   const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
   
   // Filter activities that overlap with the week
-  const [visibleActivities, setVisibleActivities] = useState<Activity[]>([]);
-  
-  useEffect(() => {
-    const filtered = activities.filter(activity => {
-      const activityStart = new Date(activity.startDate);
-      const activityEnd = new Date(activity.endDate);
-      
-      return (
-        (activityStart <= weekEnd && activityEnd >= weekStart)
-      );
-    });
+  const visibleActivities = activities.filter(activity => {
+    const activityStart = new Date(activity.startDate);
+    const activityEnd = new Date(activity.endDate);
     
-    setVisibleActivities(filtered);
-  }, [activities, weekStart, weekEnd]);
+    return (activityStart <= weekEnd && activityEnd >= weekStart);
+  });
   
   const [tooltipContent, setTooltipContent] = useState("");
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -149,19 +141,7 @@ export default function WeekView({
               <div className="activity-row border-b py-3">
                 <div className="font-medium mb-2">Projects</div>
                 <div className="relative h-6 flex">
-                  {daysInWeek.map((day) => {
-                    const dayString = format(day, "yyyy-MM-dd");
-                    const isToday = dayString === todayString;
-                    const shouldHighlight = highlightToday && isToday;
-                    
-                    return (
-                      <div 
-                        key={dayString} 
-                        className={`day-cell border-r last:border-r-0 ${shouldHighlight ? 'bg-blue-50' : ''}`}
-                        style={{ width: "100px", minWidth: "100px" }}
-                      ></div>
-                    );
-                  })}
+                  {daysInWeek.map(renderDayCell)}
                   
                   {projectActivities.map((activity) => {
                     const activityStart = new Date(activity.startDate);
