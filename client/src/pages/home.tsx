@@ -90,6 +90,21 @@ export default function Home() {
     };
   }, []);
   
+  // Listen for custom 'openImportExport' event from header component
+  useEffect(() => {
+    const handleOpenImportExport = () => {
+      setIsImportExportOpen(true);
+    };
+    
+    // Add event listener as a custom event
+    window.addEventListener('openImportExport', handleOpenImportExport);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('openImportExport', handleOpenImportExport);
+    };
+  }, []);
+  
   // Effect to parse URL parameters 
   useEffect(() => {
     // Check if we have URL parameters that indicate we should navigate to today's date

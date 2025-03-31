@@ -15,6 +15,12 @@
   border-color: #FECACA !important; /* Red 200 */
 }
 
+.dark .weekend-day {
+  background-color: #7f1d1d !important; /* Red 900 */
+  border-color: #ef4444 !important; /* Red 500 */
+  color: #f8fafc !important; /* Slate 50 */
+}
+
 /* 
  * CSS-only approach using nth-child selectors
  * This is a redundant approach that works even if JavaScript fails
@@ -23,6 +29,12 @@
 .day-cell:nth-child(7n), .day-cell:nth-child(7n+1) {
   background-color: #FEF2F2 !important; /* Red 50 */
   border-color: #FECACA !important; /* Red 200 */
+}
+
+.dark .day-cell:nth-child(7n), .dark .day-cell:nth-child(7n+1) {
+  background-color: #7f1d1d !important; /* Red 900 */
+  border-color: #ef4444 !important; /* Red 500 */
+  color: #f8fafc !important; /* Slate 50 */
 }
 
 @layer base {
@@ -85,4 +97,21 @@
 /* Weekend day styling */
 .day-cell.weekend-day {
   background-color: rgba(254, 226, 226, 0.5);
+}
+
+.dark .day-cell.weekend-day {
+  background-color: rgba(185, 28, 28, 0.5);
+}
+
+/* Dark Mode Specific Styles */
+.dark .timeline-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.2);
+}
+
+.dark .day-hover:hover {
+  background-color: rgba(139, 92, 246, 0.15);
+}
+
+.dark .activity:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.5);
 }

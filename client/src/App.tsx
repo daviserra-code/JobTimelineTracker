@@ -12,10 +12,13 @@ import MobileNav from "@/components/mobile-nav";
 import { OnboardingTour } from "@/components/onboarding-tour";
 import { useEffect, useCallback } from "react";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { useTheme } from "@/hooks/use-theme";
 
 
 function Router() {
   const [location] = useLocation();
+  // Initialize theme from user preferences
+  useTheme();
 
   // Add keyboard event listener for global shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {

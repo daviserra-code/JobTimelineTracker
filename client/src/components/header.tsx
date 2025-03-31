@@ -98,7 +98,15 @@ export default function Header() {
                 <Bell className="mr-2 h-4 w-4" />
                 <span>Notifications</span>
               </Button>
-              <Button variant="ghost" className="text-white hover:bg-[rgba(255,255,255,0.1)]">
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                onClick={() => {
+                  // Dispatch a custom event to trigger the import/export dialog
+                  window.dispatchEvent(new CustomEvent('openImportExport'));
+                }}
+                disabled={!isAdmin} // Only enabled for admin users
+              >
                 <Download className="mr-2 h-4 w-4" />
                 <span>Import/Export</span>
               </Button>
@@ -220,9 +228,16 @@ export default function Header() {
                   </button>
                 </li>
                 <li>
-                  <button className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left">
-                    <Download className="mr-3 h-5 w-5 text-gray-600" />
-                    <span>Import/Export</span>
+                  <button 
+                    className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                    onClick={() => {
+                      setIsDrawerOpen(false);
+                      window.dispatchEvent(new CustomEvent('openImportExport'));
+                    }}
+                    disabled={!isAdmin} // Only enabled for admin users
+                  >
+                    <Download className={`mr-3 h-5 w-5 ${isAdmin ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <span className={isAdmin ? '' : 'text-gray-300'}>Import/Export</span>
                   </button>
                 </li>
                 <li>
