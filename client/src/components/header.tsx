@@ -64,6 +64,20 @@ export default function Header() {
                   // Get today's information
                   const today = getTodayInfo();
                   
+                  // First, let's directly update the state in our component
+                  // This is the key part - we need to set the view mode directly
+                  // in addition to using URL parameters
+                  window.dispatchEvent(new CustomEvent('goToToday', {
+                    detail: {
+                      viewMode: 'week',
+                      year: today.year,
+                      month: today.month,
+                      week: today.week,
+                      day: today.day,
+                      highlight: true
+                    }
+                  }));
+                  
                   // Use URLSearchParams to create the query string for navigation
                   const params = new URLSearchParams();
                   params.set('view', 'week');
@@ -169,6 +183,18 @@ export default function Header() {
                       
                       // Get today's information
                       const today = getTodayInfo();
+                      
+                      // First, let's directly update the state in our component
+                      window.dispatchEvent(new CustomEvent('goToToday', {
+                        detail: {
+                          viewMode: 'week',
+                          year: today.year,
+                          month: today.month,
+                          week: today.week,
+                          day: today.day,
+                          highlight: true
+                        }
+                      }));
                       
                       // Use URLSearchParams to create the query string for navigation
                       const params = new URLSearchParams();

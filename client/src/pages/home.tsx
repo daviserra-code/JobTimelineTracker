@@ -67,6 +67,29 @@ export default function Home() {
     if (zoomLevel > 0.5) setZoomLevel(zoomLevel - 0.25);
   };
   
+  // Listen for custom 'goToToday' event from header component
+  useEffect(() => {
+    const handleGoToToday = (e: CustomEvent) => {
+      const { viewMode: todayViewMode, year, month, week, day, highlight } = e.detail;
+      
+      // Directly update our state variables
+      setViewMode(todayViewMode as ViewMode);
+      setCurrentYear(year);
+      setCurrentMonth(month);
+      setCurrentWeek(week);
+      setCurrentDay(day);
+      setHighlightToday(highlight);
+    };
+    
+    // Add event listener as a custom event
+    window.addEventListener('goToToday', handleGoToToday as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('goToToday', handleGoToToday as EventListener);
+    };
+  }, []);
+  
   // Effect to parse URL parameters 
   useEffect(() => {
     // Check if we have URL parameters that indicate we should navigate to today's date
