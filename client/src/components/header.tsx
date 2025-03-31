@@ -174,17 +174,17 @@ export default function Header() {
           onClick={() => setIsDrawerOpen(false)}
         >
           <div 
-            className="bg-white h-full w-64 shadow-lg transform transition-transform duration-300"
+            className="bg-white dark:bg-slate-800 h-full w-64 shadow-lg transform transition-transform duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-medium text-primary">Activity Calendar of Davide Serra</h2>
+            <div className="p-4 border-b dark:border-slate-700">
+              <h2 className="text-lg font-medium text-primary dark:text-white">Activity Calendar of Davide Serra</h2>
             </div>
             <nav className="p-4">
               <ul className="space-y-2">
                 <li>
                   <button 
-                    className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                    className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                     onClick={() => {
                       // Close the drawer
                       setIsDrawerOpen(false);
@@ -217,52 +217,52 @@ export default function Header() {
                       setLocation(`/?${params.toString()}`);
                     }}
                   >
-                    <CalendarDays className="mr-3 h-5 w-5 text-gray-600" />
+                    <CalendarDays className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                     <span>Today</span>
                   </button>
                 </li>
                 <li>
-                  <button className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left">
-                    <Bell className="mr-3 h-5 w-5 text-gray-600" />
+                  <button className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white">
+                    <Bell className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                     <span>Notifications</span>
                   </button>
                 </li>
                 <li>
                   <button 
-                    className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                    className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                     onClick={() => {
                       setIsDrawerOpen(false);
                       window.dispatchEvent(new CustomEvent('openImportExport'));
                     }}
                     disabled={!isAdmin} // Only enabled for admin users
                   >
-                    <Download className={`mr-3 h-5 w-5 ${isAdmin ? 'text-gray-600' : 'text-gray-300'}`} />
-                    <span className={isAdmin ? '' : 'text-gray-300'}>Import/Export</span>
+                    <Download className={`mr-3 h-5 w-5 ${isAdmin ? 'text-gray-600 dark:text-gray-300' : 'text-gray-300 dark:text-gray-600'}`} />
+                    <span className={isAdmin ? '' : 'text-gray-300 dark:text-gray-600'}>Import/Export</span>
                   </button>
                 </li>
                 <li>
                   <Link href="/account">
-                    <div className="flex items-center p-2 rounded hover:bg-gray-100">
-                      <User className="mr-3 h-5 w-5 text-gray-600" />
+                    <div className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-white">
+                      <User className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                       <span>Account</span>
                     </div>
                   </Link>
                 </li>
                 <li>
                   <button 
-                    className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                    className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                     onClick={() => {
                       setIsDrawerOpen(false);
                       setIsPreferencesDialogOpen(true);
                     }}
                   >
-                    <Settings className="mr-3 h-5 w-5 text-gray-600" />
+                    <Settings className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                     <span>Preferences</span>
                   </button>
                 </li>
-                <li className="pt-4 border-t mt-4">
-                  <button className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left">
-                    <HelpCircle className="mr-3 h-5 w-5 text-gray-600" />
+                <li className="pt-4 border-t mt-4 dark:border-slate-700">
+                  <button className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white">
+                    <HelpCircle className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                     <span>Help & Support</span>
                   </button>
                 </li>
@@ -270,20 +270,20 @@ export default function Header() {
                 <li className="mt-4">
                   {isAdmin ? (
                     <button 
-                      className="flex items-center p-2 rounded hover:bg-gray-100 w-full text-left"
+                      className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                       onClick={() => {
                         setIsDrawerOpen(false);
                         logout();
                       }}
                       disabled={isLoggingOut}
                     >
-                      <LogOut className="mr-3 h-5 w-5 text-gray-600" />
+                      <LogOut className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                       <span>Logout</span>
                     </button>
                   ) : (
                     <Link href="/login">
-                      <div className="flex items-center p-2 rounded hover:bg-gray-100">
-                        <LogIn className="mr-3 h-5 w-5 text-gray-600" />
+                      <div className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-white">
+                        <LogIn className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-300" />
                         <span>Admin Login</span>
                       </div>
                     </Link>

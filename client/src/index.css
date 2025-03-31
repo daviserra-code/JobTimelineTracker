@@ -104,6 +104,54 @@
 }
 
 /* Dark Mode Specific Styles */
+.dark {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+/* Header specific fixes for dark mode */
+.dark header {
+  background-color: #0f172a !important;
+}
+
+.dark .text-white {
+  color: #f8fafc !important;
+}
+
+.dark .hover\:bg-\[rgba\(255\,255\,255\,0\.1\)\]:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .bg-white,
+.dark .bg-background,
+.dark .bg-card {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.dark .bg-muted {
+  background-color: #475569 !important;
+}
+
+.dark .border,
+.dark .border-border {
+  border-color: #475569 !important;
+}
+
+.dark .text-foreground,
+.dark .text-primary,
+.dark .text-muted-foreground {
+  color: #f8fafc !important;
+}
+
+.dark .text-gray-600 {
+  color: #e2e8f0 !important;
+}
+
+.dark button:disabled {
+  opacity: 0.5;
+}
+
 .dark .timeline-container::-webkit-scrollbar-thumb {
   background-color: rgba(255,255,255,0.2);
 }
@@ -114,4 +162,51 @@
 
 .dark .activity:hover {
   box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+}
+
+/* Timeline specific dark mode styles */
+.dark .timeline-month {
+  background-color: #334155;
+  border-color: #475569;
+}
+
+.dark .timeline-day {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+/* Calendar specific dark mode styles */
+.dark .day-cell {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+/* Dialog and card dark mode styles */
+.dark .bg-popover,
+.dark .bg-card {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Form control dark mode styles */
+.dark .bg-input {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Button dark mode styles */
+.dark .hover\:bg-gray-100:hover {
+  background-color: #475569 !important;
+}
+
+/* Mobile navigation dark mode styles */
+.dark .fixed.bottom-0.bg-background {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark .text-muted-foreground {
+  color: #94a3b8 !important;
 }
