@@ -40,6 +40,9 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   updateNotification(id: number, notification: Partial<Notification>): Promise<Notification>;
   deleteNotification(id: number): Promise<void>;
+  getPendingNotifications(): Promise<Notification[]>;
+  getNotificationsForUser(userId: number, read?: boolean): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
   
   // Database initialization
   initializeDatabase(): Promise<void>;
@@ -191,6 +194,35 @@ export class DatabaseStorage implements IStorage {
     if (deleteResult.length === 0) {
       throw new Error(`Notification with ID ${id} not found`);
     }
+  }
+  
+  async getPendingNotifications(): Promise<Notification[]> {
+    const now = new Date();
+    
+    // Use a simpler query for now
+    const allNotifications = await db.select().from(notifications);
+    return allNotifications.filter(
+      notification => 
+        notification.status === 'pending' && 
+        notification.notifyDate <= now
+    );
+  }
+  
+  async getNotificationsForUser(userId: number, read?: boolean): Promise<Notification[]> {
+    // Use a simpler query and filter in memory
+    const allUserNotifications = await db.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId));
+      
+    if (read !== undefined) {
+      return allUserNotifications.filter(notification => notification.read === read);
+    }
+    
+    return allUserNotifications;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    return this.updateNotification(id, { read: true });
   }
   
   // Database initialization with sample data
@@ -452,6 +484,8 @@ export class DatabaseStorage implements IStorage {
           activityId: activity.id,
           notifyDate,
           read: false,
+          method: 'app',
+          status: 'pending',
           userId: user.id,
         });
       }
