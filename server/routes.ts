@@ -5,28 +5,37 @@ import { getHolidaysForYear } from "./holiday-api";
 import { z } from "zod";
 import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema, User } from "@shared/schema";
 
-// Helper function to get the current user
-async function getCurrentUser(req: Request): Promise<User | null> {
-  const userId = req.session.userId;
-  if (!userId) {
-    return null;
-  }
-  return await storage.getUser(userId) || null;
-}
-
 // Admin authorization middleware
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const userId = req.session.userId;
   if (!userId) {
-    return res.status(403).json({ message: "Permission denied: Login required" });
+    console.log("Authentication failed: No user ID in session");
+    return res.status(401).json({ 
+      message: "Authentication required: You must be logged in as an administrator",
+      code: "NOT_AUTHENTICATED"
+    });
   }
   
   storage.getUser(userId).then(user => {
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Permission denied: Admin role required" });
+    if (!user) {
+      console.log(`User not found in database: ID ${userId}`);
+      return res.status(404).json({ 
+        message: "User not found in database",
+        code: "USER_NOT_FOUND"
+      });
     }
+    
+    if (user.role !== "admin") {
+      console.log(`Permission denied: User ${user.username} has role ${user.role}, not admin`);
+      return res.status(403).json({ 
+        message: "Permission denied: Admin role required", 
+        code: "NOT_ADMIN"
+      });
+    }
+    
     next();
   }).catch(error => {
+    console.error("Authorization error:", error);
     res.status(500).json({ message: `Authorization error: ${error instanceof Error ? error.message : 'Unknown error'}` });
   });
 }
@@ -48,10 +57,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     resave: false,
     saveUninitialized: false,
     cookie: {
+      // Allow non-secure cookies in development, require secure in production
+      // but with sameSite: 'none' to work in iframe environments like Replit
       secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   }));
+  
+  // Log all requests for debugging
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path} - Session ID: ${req.session.id}, User ID: ${req.session.userId || 'none'}`);
+    next();
+  });
 
   // API routes prefix: /api
   
@@ -157,10 +175,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new activity
   app.post("/api/activities", async (req, res) => {
     try {
-      // Check if user is an admin
-      const user = await getCurrentUser(req);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      console.log("Create activity request received:", {
+        sessionId: req.session.id,
+        userId: req.session.userId,
+      });
+      
+      // Check if user is logged in
+      const userId = req.session.userId;
+      if (!userId) {
+        console.log("Authentication failed: No user ID in session");
+        return res.status(401).json({ 
+          message: "Authentication required: You must be logged in as an administrator",
+          code: "NOT_AUTHENTICATED"
+        });
+      }
+      
+      // Get user and check role
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log(`User not found in database: ID ${userId}`);
+        return res.status(404).json({ 
+          message: "User not found in database",
+          code: "USER_NOT_FOUND"
+        });
+      }
+      
+      if (user.role !== "admin") {
+        console.log(`Permission denied: User ${user.username} has role ${user.role}, not admin`);
+        return res.status(403).json({ 
+          message: "Permission denied: Admin role required", 
+          code: "NOT_ADMIN"
+        });
       }
       
       const validatedData = insertActivitySchema.parse(req.body);
@@ -178,12 +223,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: validatedData.userId,
       });
       
+      console.log(`Activity created successfully: ID ${createdActivity.id} by user ${user.username}`);
+      
+      // Set explicit headers for cookie handling in cross-domain situations
+      res.set({
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': req.headers.origin || '*'
+      });
+      
       res.status(201).json(createdActivity);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid activity data", errors: error.errors });
       }
       
+      console.error("Error creating activity:", error);
       res.status(500).json({ message: `Error creating activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
@@ -191,17 +245,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update an activity
   app.patch("/api/activities/:id", async (req, res) => {
     try {
-      // Check if user is an admin
-      const user = await getCurrentUser(req);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      console.log("Update activity request received:", {
+        activityId: req.params.id,
+        sessionId: req.session.id,
+        userId: req.session.userId,
+      });
+      
+      // Check if user is logged in
+      const userId = req.session.userId;
+      if (!userId) {
+        console.log("Authentication failed: No user ID in session");
+        return res.status(401).json({ 
+          message: "Authentication required: You must be logged in as an administrator",
+          code: "NOT_AUTHENTICATED"
+        });
+      }
+      
+      // Get user and check role
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log(`User not found in database: ID ${userId}`);
+        return res.status(404).json({ 
+          message: "User not found in database",
+          code: "USER_NOT_FOUND"
+        });
+      }
+      
+      if (user.role !== "admin") {
+        console.log(`Permission denied: User ${user.username} has role ${user.role}, not admin`);
+        return res.status(403).json({ 
+          message: "Permission denied: Admin role required", 
+          code: "NOT_ADMIN"
+        });
       }
       
       const id = parseInt(req.params.id);
       const activity = await storage.getActivity(id);
       
       if (!activity) {
-        return res.status(404).json({ message: "Activity not found" });
+        console.log(`Activity not found: ID ${id}`);
+        return res.status(404).json({ 
+          message: "Activity not found",
+          code: "ACTIVITY_NOT_FOUND"
+        });
       }
       
       // Process dates if they are strings
@@ -216,6 +302,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedActivity = await storage.updateActivity(id, updateData);
+      
+      console.log(`Activity updated successfully: ID ${id} by user ${user.username}`);
+      
+      // Set explicit headers for cookie handling in cross-domain situations
+      res.set({
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': req.headers.origin || '*'
+      });
+      
       res.json(updatedActivity);
     } catch (error) {
       console.error("Update activity error:", error);
@@ -226,28 +321,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete an activity
   app.delete("/api/activities/:id", async (req, res) => {
     try {
-      // Debug: Log session info
-      console.log("Session data for delete activity:", req.session);
+      // Debug: Log session and request info
+      console.log("Delete activity request received:", {
+        activityId: req.params.id,
+        sessionId: req.session.id,
+        userId: req.session.userId,
+        headers: {
+          origin: req.headers.origin,
+          cookie: req.headers.cookie ? "present" : "absent"
+        }
+      });
       
       // Check if user is logged in
       const userId = req.session.userId;
       if (!userId) {
+        console.log("Authentication failed: No user ID in session");
         return res.status(401).json({ 
           message: "Authentication required: You must be logged in as an administrator",
-          code: "NOT_AUTHENTICATED"
+          code: "NOT_AUTHENTICATED",
+          debug: {
+            sessionId: req.session.id,
+            cookiePresent: req.headers.cookie ? true : false
+          }
         });
       }
       
       // Get user and check role
       const user = await storage.getUser(userId);
       if (!user) {
+        console.log(`User not found in database: ID ${userId}`);
         return res.status(404).json({ 
           message: "User not found in database",
-          code: "USER_NOT_FOUND"
+          code: "USER_NOT_FOUND",
+          userId
         });
       }
       
       if (user.role !== "admin") {
+        console.log(`Permission denied: User ${user.username} has role ${user.role}, not admin`);
         return res.status(403).json({ 
           message: "Permission denied: Admin role required", 
           code: "NOT_ADMIN",
@@ -260,13 +371,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activity = await storage.getActivity(id);
       
       if (!activity) {
+        console.log(`Activity not found: ID ${id}`);
         return res.status(404).json({ 
           message: "Activity not found",
-          code: "ACTIVITY_NOT_FOUND" 
+          code: "ACTIVITY_NOT_FOUND",
+          activityId: id
         });
       }
       
       await storage.deleteActivity(id);
+      console.log(`Activity deleted successfully: ID ${id} by user ${user.username}`);
+      
+      // Set explicit headers for cookie handling in cross-domain situations
+      res.set({
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': req.headers.origin || '*'
+      });
+      
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting activity:", error);
@@ -280,10 +401,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import activities
   app.post("/api/activities/import", async (req, res) => {
     try {
-      // Check if user is an admin
-      const user = await getCurrentUser(req);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      console.log("Import activities request received:", {
+        sessionId: req.session.id,
+        userId: req.session.userId,
+        activitiesCount: req.body.activities?.length
+      });
+      
+      // Check if user is logged in
+      const userId = req.session.userId;
+      if (!userId) {
+        console.log("Authentication failed: No user ID in session");
+        return res.status(401).json({ 
+          message: "Authentication required: You must be logged in as an administrator",
+          code: "NOT_AUTHENTICATED"
+        });
+      }
+      
+      // Get user and check role
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log(`User not found in database: ID ${userId}`);
+        return res.status(404).json({ 
+          message: "User not found in database",
+          code: "USER_NOT_FOUND"
+        });
+      }
+      
+      if (user.role !== "admin") {
+        console.log(`Permission denied: User ${user.username} has role ${user.role}, not admin`);
+        return res.status(403).json({ 
+          message: "Permission denied: Admin role required", 
+          code: "NOT_ADMIN"
+        });
       }
       
       const { activities } = req.body;
@@ -318,11 +467,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      console.log(`Activities imported successfully: ${importedActivities.length} of ${activities.length} by user ${user.username}`);
+      
+      // Set explicit headers for cookie handling in cross-domain situations
+      res.set({
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': req.headers.origin || '*'
+      });
+      
       res.status(201).json({
         message: `Imported ${importedActivities.length} of ${activities.length} activities`,
         activities: importedActivities,
       });
     } catch (error) {
+      console.error("Error importing activities:", error);
       res.status(500).json({ message: `Error importing activities: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
@@ -435,23 +593,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+      console.log(`Login attempt for user: ${username}`);
       
       // Find user by username
       const user = await storage.getUserByUsername(username);
       
       if (!user || user.password !== password) {
+        console.log(`Login failed: Invalid credentials for ${username}`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
       // Set up session (simplified for demo)
       req.session.userId = user.id;
       
+      // Save session immediately to ensure cookie is set
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
+      console.log(`Login successful for ${username} (${user.role}). Session ID: ${req.session.id}, User ID: ${user.id}`);
+      
+      // Set explicit headers for cookie handling in cross-domain situations
+      res.set({
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': req.headers.origin || '*'
+      });
+      
       res.json({ 
         id: user.id, 
         username: user.username,
-        role: user.role
+        role: user.role,
+        sessionId: req.session.id // Include for debugging
       });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ message: `Login error: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
