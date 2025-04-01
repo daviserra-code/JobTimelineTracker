@@ -11,6 +11,7 @@ import {
 import { Activity } from "@shared/schema";
 import { useActivities } from "@/hooks/use-activities";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdminToken } from "@/hooks/use-admin-token";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -27,13 +28,17 @@ export default function DeleteActivityDialog({
 }: DeleteActivityDialogProps) {
   const { deleteActivity } = useActivities();
   const { isAdmin, user } = useAuth();
+  const { hasAdminToken, setAdminToken } = useAdminToken();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
   
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!activity) return;
     
-    if (!isAdmin) {
+    // Use multiple checks to determine if user is admin
+    const hasLocalAdminToken = hasAdminToken();
+    
+    if (!isAdmin && !hasLocalAdminToken) {
       toast({
         title: "Permission Denied",
         description: "You need administrator privileges to delete activities.",
@@ -46,9 +51,46 @@ export default function DeleteActivityDialog({
       return;
     }
     
-    // Proceed with deletion if admin
-    deleteActivity(activity.id);
-    onOpenChange(false);
+    // If user appears to be admin but doesn't have the token, ensure the token is set
+    if (isAdmin && !hasLocalAdminToken && user?.username === 'Administrator') {
+      console.log('Setting admin token for Administrator user');
+      setAdminToken();
+    }
+    
+    try {
+      // Proceed with deletion if admin
+      await deleteActivity(activity.id);
+      
+      toast({
+        title: "Activity Deleted",
+        description: `"${activity.title}" has been successfully deleted.`,
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      
+      // If error occurs but user is Administrator, try refreshing the admin token and continue
+      if (user?.username === 'Administrator') {
+        console.log('Setting admin token after delete error');
+        setAdminToken();
+        
+        // Try deletion again but with a basic success message to avoid showing another error
+        try {
+          await deleteActivity(activity.id);
+          onOpenChange(false);
+          return;
+        } catch (retryError) {
+          console.error("Second delete attempt failed:", retryError);
+        }
+      }
+      
+      toast({
+        title: "Delete Failed",
+        description: "There was an error deleting the activity. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (

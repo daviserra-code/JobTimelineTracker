@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useActivities } from "@/hooks/use-activities";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdminToken } from "@/hooks/use-admin-token";
 import { Activity, InsertActivity, ImportExportFormat } from "@shared/schema";
 import { downloadFile } from "@/lib/export";
 import * as XLSX from 'xlsx';
@@ -19,6 +21,8 @@ export default function ImportExportDialog({ open, onOpenChange, activities }: I
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { importActivities } = useActivities();
+  const { user, isAdmin } = useAuth();
+  const { hasAdminToken, setAdminToken } = useAdminToken();
   
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -98,6 +102,12 @@ export default function ImportExportDialog({ open, onOpenChange, activities }: I
       return;
     }
     
+    // If user is Administrator but doesn't have the token set, ensure it's set
+    if (user?.username === 'Administrator' && !hasAdminToken()) {
+      console.log('Setting admin token for Administrator user in import dialog');
+      setAdminToken();
+    }
+    
     setIsUploading(true);
     
     try {
@@ -133,7 +143,16 @@ export default function ImportExportDialog({ open, onOpenChange, activities }: I
             endDate: new Date(item.endDate)
           }));
           
+          // Set admin token again right before import if user is Administrator
+          if (user?.username === 'Administrator') {
+            console.log('Setting admin token before import operation');
+            setAdminToken();
+          }
+
+          // Perform the import
           importActivities(importData);
+          
+          // Reset UI state
           setSelectedFile(null);
           if (fileInputRef.current) {
             fileInputRef.current.value = '';

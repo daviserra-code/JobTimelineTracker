@@ -198,11 +198,12 @@ export function useActivities(props?: UseActivitiesProps) {
             console.log("Could not read error response");
           }
         }
-      } catch (err) {
-        if (err.name === 'AbortError') {
+      } catch (err: unknown) {
+        const error = err as Error;
+        if (error.name === 'AbortError') {
           console.log("⏱️ GET-based deletion timed out, trying next method");
         } else {
-          console.log("❌ Network error in GET-based deletion:", err);
+          console.log("❌ Network error in GET-based deletion:", error);
         }
       }
       
@@ -242,11 +243,12 @@ export function useActivities(props?: UseActivitiesProps) {
             console.log("Could not read error response");
           }
         }
-      } catch (err) {
-        if (err.name === 'AbortError') {
+      } catch (err: unknown) {
+        const error = err as Error;
+        if (error.name === 'AbortError') {
           console.log("⏱️ Special admin DELETE timed out, trying next method");
         } else {
-          console.log("❌ Network error in special admin DELETE:", err);
+          console.log("❌ Network error in special admin DELETE:", error);
         }
       }
       
@@ -298,8 +300,9 @@ export function useActivities(props?: UseActivitiesProps) {
             throw new Error(`Delete failed with status: ${response.status}`);
           }
         }
-      } catch (err) {
-        console.log("❌ Error in authenticated DELETE:", err);
+      } catch (err: unknown) {
+        const error = err as Error;
+        console.log("❌ Error in authenticated DELETE:", error);
         
         // Check if we're an admin - if so, return ID instead of throwing an error
         // This helps prevent losing the admin state in the deployed environment
@@ -348,8 +351,9 @@ export function useActivities(props?: UseActivitiesProps) {
         }
         
         console.log("Special admin import endpoint failed, falling back to standard endpoint");
-      } catch (err) {
-        console.log("Error using special admin import endpoint, falling back to normal endpoint:", err);
+      } catch (err: unknown) {
+        const error = err as Error;
+        console.log("Error using special admin import endpoint, falling back to normal endpoint:", error);
       }
       
       // Fallback to the normal endpoint with authentication

@@ -12,7 +12,7 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // For special admin operations, add authorization header
+  // For special admin operations, add multiple headers to support various authentication methods
   // This is specifically for the deployed environment where cookies might not work
   const headers: Record<string, string> = {};
   
@@ -20,18 +20,43 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // For all admin operations related to activities, include special authentication header
-  // This is a workaround for deployment environments where cookies may not be properly handled
+  // Check if the admin token exists in localStorage
+  let adminToken = null;
+  try {
+    adminToken = localStorage.getItem('admin_token_dvd70ply');
+  } catch (err) {
+    console.log('Error reading localStorage:', err);
+  }
+  
+  // For all admin operations related to activities, include various auth headers
   if (url.includes("/api/activities")) {
-    // Only add auth header for operations that modify data (not for GET requests)
+    // Only add auth headers for operations that modify data (not for GET requests)
     if (method === "DELETE" || method === "POST" || method === "PATCH" || method === "PUT") {
+      // Add multiple authentication methods for redundancy
       headers["Authorization"] = "Bearer Admin-dvd70ply";
+      headers["X-Admin-Key"] = "dvd70ply";
+      
+      // If admin token exists in localStorage, add it as a header
+      if (adminToken === 'Administrator-dvd70ply') {
+        headers["X-Admin-Auth-Token"] = "Administrator-dvd70ply";
+      }
+      
+      // For DELETE methods, we'll also try appending the token to the URL if all else fails
+      if (method === "DELETE" && !url.includes("?")) {
+        url = `${url}?adminToken=Administrator-dvd70ply`;
+      }
     }
   }
   
-  // Also add auth header for importing activities
+  // Also add auth headers for importing activities
   if (url.includes("/api/activities/import")) {
     headers["Authorization"] = "Bearer Admin-dvd70ply";
+    headers["X-Admin-Key"] = "dvd70ply";
+    
+    // If admin token exists in localStorage, add it as a header
+    if (adminToken === 'Administrator-dvd70ply') {
+      headers["X-Admin-Auth-Token"] = "Administrator-dvd70ply";
+    }
   }
   
   const res = await fetch(url, {

@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -61,7 +62,10 @@ export default function LoginPage() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Get the direct admin login method from our hook
+  const { loginAsAdmin } = useAuth();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
       toast({
@@ -71,7 +75,26 @@ export default function LoginPage() {
       });
       return;
     }
-    mutate({ username, password });
+    
+    // If username is Administrator, use our special direct login method
+    // This will work in deployed environments where cookies might not persist
+    if (username.toLowerCase() === 'administrator') {
+      try {
+        const success = await loginAsAdmin(password);
+        if (success) {
+          // On success, redirect to home
+          setLocation('/');
+        }
+      } catch (err) {
+        console.error('Error in direct admin login:', err);
+        
+        // Fallback to regular login
+        mutate({ username, password });
+      }
+    } else {
+      // For non-admin users, use regular login
+      mutate({ username, password });
+    }
   };
 
   return (

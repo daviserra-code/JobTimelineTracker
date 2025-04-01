@@ -11,6 +11,8 @@ import { format, parse } from "date-fns";
 import { ACTIVITY_TYPES, ACTIVITY_STATUSES } from "@/lib/constants";
 import { InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
 import { useActivities } from "@/hooks/use-activities";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdminToken } from "@/hooks/use-admin-token";
 
 // Extend the activity schema with form validation
 const formSchema = z.object({
@@ -49,6 +51,8 @@ interface ActivityFormProps {
 
 export default function ActivityForm({ open, onOpenChange, initialData, actionType }: ActivityFormProps) {
   const { createActivity, updateActivity } = useActivities();
+  const { user, isAdmin } = useAuth();
+  const { setAdminToken, hasAdminToken } = useAdminToken();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,7 +71,13 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
     },
   });
   
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    // If user is Administrator but doesn't have the token set, ensure it's set
+    if (user?.username === 'Administrator' && !hasAdminToken()) {
+      console.log('Setting admin token for Administrator user in activity form');
+      setAdminToken();
+    }
+    
     // Create full datetime objects by combining date and time
     const startDateTime = values.startTime 
       ? new Date(`${format(values.startDate, 'yyyy-MM-dd')}T${values.startTime}:00`) 
@@ -87,16 +97,28 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       endTime: undefined
     };
     
-    if (actionType === "create") {
-      createActivity(activityData);
-    } else if (actionType === "edit" && initialData) {
-      // For editing, we need to get the ID from the initialData which might be cast as Activity
-      const activityId = (initialData as any).id;
-      if (activityId) {
-        updateActivity({ id: activityId, activity: activityData });
+    try {
+      if (actionType === "create") {
+        await createActivity(activityData);
+      } else if (actionType === "edit" && initialData) {
+        // For editing, we need to get the ID from the initialData which might be cast as Activity
+        const activityId = (initialData as any).id;
+        if (activityId) {
+          await updateActivity({ id: activityId, activity: activityData });
+        }
+      }
+      
+      // Close dialog on success
+      onOpenChange(false);
+    } catch (error) {
+      console.error(`Error ${actionType === "create" ? "creating" : "updating"} activity:`, error);
+      
+      // If error occurs, make another attempt to set admin token
+      if (user?.username === 'Administrator') {
+        console.log('Setting admin token after error');
+        setAdminToken();
       }
     }
-    onOpenChange(false);
   }
   
   return (
