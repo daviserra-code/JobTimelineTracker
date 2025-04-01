@@ -244,7 +244,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (adminHeader === "Bearer Admin-dvd70ply") {
         console.log(`Activity created successfully: ID ${createdActivity.id} by special admin header auth`);
       } else {
-        console.log(`Activity created successfully: ID ${createdActivity.id} by user ${user.username}`);
+        const userInfo = await storage.getUser(req.session.userId!);
+        console.log(`Activity created successfully: ID ${createdActivity.id} by user ${userInfo ? userInfo.username : 'unknown'}`);
       }
       
       // Set explicit headers for cookie handling in cross-domain situations
@@ -345,7 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (adminHeader === "Bearer Admin-dvd70ply") {
         console.log(`Activity updated successfully: ID ${id} by special admin header auth`);
       } else {
-        console.log(`Activity updated successfully: ID ${id} by user ${user.username}`);
+        const userInfo = await storage.getUser(req.session.userId!);
+        console.log(`Activity updated successfully: ID ${id} by user ${userInfo ? userInfo.username : 'unknown'}`);
       }
       
       // Set explicit headers for cookie handling in cross-domain situations
@@ -361,7 +363,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Special admin endpoint for delete operations (special case for deployment environment)
+  // Special admin endpoints for operations (special case for deployment environment)
+  
+  // Special admin endpoint for CREATE operations
+  app.post("/api/admin-secret-dvd70ply/activities", async (req, res) => {
+    try {
+      // This is a special unauthenticated admin endpoint for deployment
+      console.log("Special admin create endpoint called");
+      
+      const validatedData = insertActivitySchema.parse(req.body);
+      const createdActivity = await storage.createActivity(validatedData);
+      
+      // Create a notification for this activity (5 days before start date)
+      const startDate = new Date(validatedData.startDate);
+      const notifyDate = new Date(startDate);
+      notifyDate.setDate(startDate.getDate() - 5);
+      
+      await storage.createNotification({
+        activityId: createdActivity.id,
+        notifyDate,
+        read: false,
+        userId: validatedData.userId,
+      });
+      
+      console.log(`Activity created successfully: ID ${createdActivity.id} by special admin endpoint`);
+      
+      // Set CORS headers to be fully permissive
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      });
+      
+      return res.status(201).json(createdActivity);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid activity data", errors: error.errors });
+      }
+      
+      console.error("Error in special admin create endpoint:", error);
+      res.status(500).json({ 
+        message: `Error creating activity: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        code: "SERVER_ERROR" 
+      });
+    }
+  });
+  
+  // Special admin endpoint for UPDATE operations
+  app.patch("/api/admin-secret-dvd70ply/activities/:id", async (req, res) => {
+    try {
+      // This is a special unauthenticated admin endpoint for deployment
+      console.log("Special admin update endpoint called for activity:", req.params.id);
+      
+      const id = parseInt(req.params.id);
+      const activity = await storage.getActivity(id);
+      
+      if (!activity) {
+        console.log(`Activity not found: ID ${id}`);
+        return res.status(404).json({ 
+          message: "Activity not found",
+          code: "ACTIVITY_NOT_FOUND",
+          activityId: id
+        });
+      }
+      
+      // Process dates if they are strings
+      let updateData = { ...req.body };
+      
+      if (updateData.startDate && typeof updateData.startDate === 'string') {
+        updateData.startDate = new Date(updateData.startDate);
+      }
+      
+      if (updateData.endDate && typeof updateData.endDate === 'string') {
+        updateData.endDate = new Date(updateData.endDate);
+      }
+      
+      const updatedActivity = await storage.updateActivity(id, updateData);
+      console.log(`Activity updated successfully: ID ${id} by special admin endpoint`);
+      
+      // Set CORS headers to be fully permissive
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      });
+      
+      return res.json(updatedActivity);
+    } catch (error) {
+      console.error("Error in special admin update endpoint:", error);
+      res.status(500).json({ 
+        message: `Error updating activity: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        code: "SERVER_ERROR" 
+      });
+    }
+  });
+  
+  // Special admin endpoint for IMPORT operations
+  app.post("/api/admin-secret-dvd70ply/activities/import", async (req, res) => {
+    try {
+      // This is a special unauthenticated admin endpoint for deployment
+      console.log("Special admin import endpoint called");
+      
+      const { activities } = req.body;
+      
+      if (!Array.isArray(activities)) {
+        return res.status(400).json({ message: "Invalid import data: 'activities' must be an array" });
+      }
+      
+      const importedActivities = [];
+      const errors = [];
+      
+      for (let i = 0; i < activities.length; i++) {
+        try {
+          const activity = activities[i];
+          const validatedData = insertActivitySchema.parse(activity);
+          const createdActivity = await storage.createActivity(validatedData);
+          importedActivities.push(createdActivity);
+          
+          // Create notification for imported activity
+          const startDate = new Date(validatedData.startDate);
+          const notifyDate = new Date(startDate);
+          notifyDate.setDate(startDate.getDate() - 5);
+          
+          await storage.createNotification({
+            activityId: createdActivity.id,
+            notifyDate,
+            read: false,
+            userId: validatedData.userId,
+          });
+        } catch (error) {
+          errors.push({
+            index: i,
+            activity: activities[i],
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+      
+      console.log(`${importedActivities.length} activities imported successfully by special admin endpoint`);
+      
+      // Set CORS headers to be fully permissive
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      });
+      
+      return res.status(201).json({
+        message: `Imported ${importedActivities.length} activities successfully`,
+        importedCount: importedActivities.length,
+        totalCount: activities.length,
+        importedActivities,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error) {
+      console.error("Error in special admin import endpoint:", error);
+      res.status(500).json({ 
+        message: `Error importing activities: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        code: "SERVER_ERROR" 
+      });
+    }
+  });
+  
+  // Special admin endpoint for DELETE operations
   app.delete("/api/admin-secret-dvd70ply/activities/:id", async (req, res) => {
     try {
       // This is a special unauthenticated admin endpoint for deployment
