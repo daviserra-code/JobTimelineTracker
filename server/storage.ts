@@ -199,11 +199,12 @@ export class DatabaseStorage implements IStorage {
   async getPendingNotifications(): Promise<Notification[]> {
     const now = new Date();
     
-    // Use a simpler query for now
+    // Since we don't have status field in the database, we'll consider all
+    // unread notifications with notifyDate in the past as pending
     const allNotifications = await db.select().from(notifications);
     return allNotifications.filter(
       notification => 
-        notification.status === 'pending' && 
+        !notification.read && 
         notification.notifyDate <= now
     );
   }
@@ -484,9 +485,10 @@ export class DatabaseStorage implements IStorage {
           activityId: activity.id,
           notifyDate,
           read: false,
-          method: 'app',
-          status: 'pending',
           userId: user.id,
+          // Fields below are no longer part of the actual database schema
+          // method: 'app',
+          // status: 'pending',
         });
       }
       

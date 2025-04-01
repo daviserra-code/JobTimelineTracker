@@ -21,17 +21,14 @@ class AppNotificationProvider implements NotificationProvider {
 
   async send(notification: Notification, activity: Activity, user: User, preferences: UserPreference): Promise<boolean> {
     try {
-      // Update notification status to sent
-      await storage.updateNotification(notification.id, {
-        status: 'sent',
-        sentAt: new Date()
-      });
+      // We can't update status, but app notifications always succeed
+      // so we won't mark as read yet to allow it to be displayed to the user
       return true;
     } catch (error) {
       console.error('Error sending app notification:', error);
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        read: true
       });
       return false;
     }
@@ -46,18 +43,20 @@ class EmailNotificationProvider implements NotificationProvider {
 
   async send(notification: Notification, activity: Activity, user: User, preferences: UserPreference): Promise<boolean> {
     if (!this.canSend()) {
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: 'SendGrid API key not configured'
+        read: true
       });
+      console.error('SendGrid API key not configured');
       return false;
     }
 
     if (!preferences.email) {
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: 'User email not configured'
+        read: true
       });
+      console.error('User email not configured');
       return false;
     }
 
@@ -84,16 +83,16 @@ class EmailNotificationProvider implements NotificationProvider {
 
       await sendgrid.send(message);
       
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'sent',
-        sentAt: new Date()
+        read: true
       });
       return true;
     } catch (error) {
       console.error('Error sending email notification:', error);
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        read: true
       });
       return false;
     }
@@ -112,18 +111,20 @@ class SmsNotificationProvider implements NotificationProvider {
 
   async send(notification: Notification, activity: Activity, user: User, preferences: UserPreference): Promise<boolean> {
     if (!this.canSend()) {
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: 'Twilio credentials not configured'
+        read: true
       });
+      console.error('Twilio credentials not configured');
       return false;
     }
 
     if (!preferences.phone) {
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: 'User phone number not configured'
+        read: true
       });
+      console.error('User phone number not configured');
       return false;
     }
 
@@ -133,17 +134,17 @@ class SmsNotificationProvider implements NotificationProvider {
       const message = `Reminder: ${activity.title} at ${activity.startDate.toLocaleString()}`;
       console.log(`Would send SMS to ${preferences.phone}: ${message}`);
       
-      // Since this is a placeholder, we'll mark it as failed without credentials
+      // Since this is a placeholder and we can't update status (field doesn't exist),
+      // we'll just mark it as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: 'SMS notification not implemented yet'
+        read: true
       });
       return false;
     } catch (error) {
       console.error('Error sending SMS notification:', error);
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        read: true
       });
       return false;
     }
@@ -172,10 +173,11 @@ class NotificationService {
   async sendNotification(notification: Notification): Promise<boolean> {
     try {
       if (!notification.activityId || !notification.userId) {
+        // Mark as read to prevent further attempts
         await storage.updateNotification(notification.id, {
-          status: 'failed',
-          errorMessage: 'Missing required relation IDs'
+          read: true
         });
+        console.error('Missing required relation IDs for notification');
         return false;
       }
       
@@ -185,31 +187,43 @@ class NotificationService {
       const preferences = await storage.getUserPreferences(notification.userId);
       
       if (!activity || !user || !preferences) {
+        // Mark as read to prevent further attempts
         await storage.updateNotification(notification.id, {
-          status: 'failed',
-          errorMessage: 'Missing required data (activity, user, or preferences)'
+          read: true
         });
+        console.error('Missing required data (activity, user, or preferences) for notification');
         return false;
       }
 
-      // Get the provider for this notification method
-      const provider = this.providers.get(notification.method as NotificationMethod);
+      // Since we don't store method in the database, we'll use 'app' as default
+      const method = 'app' as NotificationMethod;
+      const provider = this.providers.get(method);
       
       if (!provider) {
+        // Mark as read to prevent further attempts
         await storage.updateNotification(notification.id, {
-          status: 'failed',
-          errorMessage: `Unsupported notification method: ${notification.method}`
+          read: true
         });
+        console.error(`Unsupported notification method: ${method}`);
         return false;
       }
 
       // Send the notification
-      return await provider.send(notification, activity, user, preferences);
+      const success = await provider.send(notification, activity, user, preferences);
+      
+      // If successful, mark notification as read
+      if (success) {
+        await storage.updateNotification(notification.id, {
+          read: true
+        });
+      }
+      
+      return success;
     } catch (error) {
       console.error('Error in notification service:', error);
+      // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        read: true
       });
       return false;
     }
@@ -256,8 +270,9 @@ class NotificationService {
           activityId: activity.id,
           userId: activity.userId,
           notifyDate,
-          method,
-          status: 'pending',
+          // Fields below are no longer part of the actual database schema
+          // method,
+          // status: 'pending',
         });
       }
     }

@@ -71,19 +71,25 @@ export const notifications = pgTable("notifications", {
   activityId: integer("activity_id").references(() => activities.id, { onDelete: "cascade" }),
   notifyDate: timestamp("notify_date").notNull(),
   read: boolean("read").default(false),
-  method: text("method").default("app"), // app, email, sms
-  status: text("status").default("pending"), // pending, sent, failed
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  // Note: The following fields are present in schema but not in actual database
+  // Until DB is migrated, these won't be used in queries
+  method: text("method").default("app").notNull(), // app, email, sms
+  status: text("status").default("pending").notNull(), // pending, sent, failed
   errorMessage: text("error_message"), // For logging delivery errors
   createdAt: timestamp("created_at").defaultNow(),
   sentAt: timestamp("sent_at"),
-  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
 });
 
 // Create and refine the notification schema to handle string dates
+// Only include fields that exist in the actual database
 const baseInsertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
   sentAt: true,
+  method: true,
+  status: true,
+  errorMessage: true,
 });
 
 export const insertNotificationSchema = baseInsertNotificationSchema.extend({
