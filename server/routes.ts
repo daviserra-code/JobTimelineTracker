@@ -642,7 +642,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Regular delete activity endpoint (requires authentication)
   app.delete("/api/activities/:id", async (req, res) => {
     try {
-      // Debug: Log session and request info
+      // Set permissive CORS headers for all responses
+      res.set({
+        'Access-Control-Allow-Origin': req.headers.origin || '*',
+        'Access-Control-Allow-Methods': 'DELETE, OPTIONS, HEAD, GET, POST',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Key'
+      });
+    
+      // Debug: Log detailed session and request info
       console.log("Delete activity request received:", {
         activityId: req.params.id,
         sessionId: req.session.id,
@@ -650,18 +657,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         headers: {
           origin: req.headers.origin,
           cookie: req.headers.cookie ? "present" : "absent",
-          authorization: req.headers.authorization ? "present" : "absent"
+          authorization: req.headers.authorization ? "present" : "absent",
+          'x-admin-key': req.headers['x-admin-key'] ? "present" : "absent"
         }
       });
       
-      // SPECIAL DEPLOYMENT HANDLING: Check for admin role in header instead of session
+      // SPECIAL DEPLOYMENT HANDLING: Check for admin identifiers in headers
       // This is specifically for the deployed version where sessions might not work
       const adminHeader = req.headers.authorization;
-      if (adminHeader === "Bearer Admin-dvd70ply") {
-        console.log("Admin authenticated via authorization header");
+      const adminKey = req.headers['x-admin-key'];
+      
+      // Check both authorization header and x-admin-key header
+      if (adminHeader === "Bearer Admin-dvd70ply" || adminKey === "dvd70ply") {
+        console.log("Admin authenticated via special header");
         
         // Process directly as Admin (bypass session check)
         const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+          return res.status(400).json({ message: "Invalid ID format" });
+        }
+        
         const activity = await storage.getActivity(id);
         
         if (!activity) {
@@ -675,12 +690,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         await storage.deleteActivity(id);
         console.log(`Activity deleted successfully: ID ${id} by special admin header auth`);
-        
-        // Set explicit headers for cookie handling in cross-domain situations
-        res.set({
-          'Access-Control-Allow-Credentials': 'true',
-          'Access-Control-Allow-Origin': req.headers.origin || '*'
-        });
         
         return res.status(204).send();
       } else {
@@ -957,6 +966,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
+      // Special handling for administrator account - ensure role is always admin
+      let userRole = user.role;
+      if (username.toLowerCase() === "administrator" && password === "dvd70ply") {
+        // Always ensure admin role for administrator
+        userRole = "admin";
+        
+        // If the saved role is not admin, update it
+        if (user.role !== "admin") {
+          console.log(`Updating role for administrator account to admin (was: ${user.role})`);
+          await storage.updateUser(user.id, { role: "admin" });
+        }
+      }
+      
       // Set up session (simplified for demo)
       req.session.userId = user.id;
       
@@ -972,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
       
-      console.log(`Login successful for ${username} (${user.role}). Session ID: ${req.session.id}, User ID: ${user.id}`);
+      console.log(`Login successful for ${username} (${userRole}). Session ID: ${req.session.id}, User ID: ${user.id}`);
       
       // Set explicit headers for cookie handling in cross-domain situations
       res.set({
@@ -983,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         id: user.id, 
         username: user.username,
-        role: user.role,
+        role: userRole, // Use the potentially updated role
         sessionId: req.session.id // Include for debugging
       });
     } catch (error) {

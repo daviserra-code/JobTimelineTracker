@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ViewMode, Region } from "@shared/schema";
+import { ViewMode, Region, UserRole } from "@shared/schema";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface UserPreferencesDialogProps {
   open: boolean;
@@ -17,6 +19,8 @@ interface UserPreferencesDialogProps {
 }
 
 export default function UserPreferencesDialog({ open, onOpenChange }: UserPreferencesDialogProps) {
+  const { user, isAdmin } = useAuth();
+  
   const {
     preferences,
     isLoading,
@@ -27,10 +31,16 @@ export default function UserPreferencesDialog({ open, onOpenChange }: UserPrefer
     setNotificationsEnabled,
     setNotificationLeadTime,
     setCustomSettings,
+    setRole,
   } = useUserPreferences();
   
   const [selectedRegions, setSelectedRegions] = useState<Region[]>(
     preferences.defaultRegions || ["italy"]
+  );
+  
+  // Set the appropriate role - if admin logged in, default to "administrator", otherwise "user"
+  const [selectedRole, setSelectedRole] = useState<UserRole>(
+    isAdmin ? "admin" : "user"
   );
   
   const handleRegionToggle = (region: Region) => {
@@ -40,6 +50,13 @@ export default function UserPreferencesDialog({ open, onOpenChange }: UserPrefer
     
     setSelectedRegions(newRegions);
     setRegions(newRegions);
+  };
+  
+  const handleRoleChange = (role: UserRole) => {
+    setSelectedRole(role);
+    if (setRole) {
+      setRole(role);
+    }
   };
   
   const handleSaveAndClose = () => {
@@ -86,6 +103,27 @@ export default function UserPreferencesDialog({ open, onOpenChange }: UserPrefer
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Role selection - only visible for admin users */}
+              {isAdmin && (
+                <div className="space-y-2 p-3 bg-muted/30 rounded-md border mb-4">
+                  <Label className="text-md font-semibold">User Role</Label>
+                  <RadioGroup defaultValue={selectedRole} onValueChange={(value) => handleRoleChange(value as UserRole)}>
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="admin" id="role-admin" />
+                      <Label htmlFor="role-admin" className="font-medium">Administrator</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="user" id="role-user" />
+                      <Label htmlFor="role-user">User (Read-only)</Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Administrator role allows creating, editing, and deleting activities. 
+                    User role provides read-only access.
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label>Active Regions</Label>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserPreference, ViewMode, Region } from '@shared/schema';
+import { UserPreference, ViewMode, Region, UserRole } from '@shared/schema';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -102,6 +102,21 @@ export function useUserPreferences(options?: UseUserPreferencesOptions) {
     });
   };
   
+  // Update the user role (admin use only)
+  const setRole = (role: UserRole) => {
+    // This doesn't actually update a preference, but will be used to update the user through a different API
+    // We'll add a mutation to update the user info specifically in the useAuth hook
+    
+    // For now, we'll just log it
+    console.log(`Role changed to: ${role}`);
+    
+    // Invalidate the user data after role change
+    queryClient.invalidateQueries({ queryKey: ['/api/users/me'] });
+    
+    // In a real application, we would call an API to update the user role:
+    // return apiRequest('PATCH', `/api/users/${userId}`, { role });
+  };
+  
   return {
     preferences: preferences || createDefaultPreferences(),
     isLoading,
@@ -114,5 +129,6 @@ export function useUserPreferences(options?: UseUserPreferencesOptions) {
     setNotificationsEnabled,
     setNotificationLeadTime,
     setCustomSettings,
+    setRole,
   };
 }
