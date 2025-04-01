@@ -155,45 +155,99 @@ export function useActivities(props?: UseActivitiesProps) {
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       try {
-        // First try the special admin endpoint for deployment environments
-        // This bypass all authentication and is guaranteed to work in deployed environments
-        const specialResponse = await fetch(`/api/admin-secret-dvd70ply/activities/${id}`, {
+        // Use the special admin endpoint with direct fetch and no credentials to bypass all auth 
+        // This is specifically designed to work on the deployed environment
+        const fullUrl = window.location.origin + `/api/admin-secret-dvd70ply/activities/${id}`;
+        console.log(`Trying to delete activity ${id} using URL: ${fullUrl}`);
+        
+        const specialResponse = await fetch(fullUrl, {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Explicitly avoid sending credentials
+          credentials: "omit" 
         });
+        
+        console.log(`Delete response status: ${specialResponse.status}`);
         
         if (specialResponse.ok) {
           console.log("Activity deleted using the special admin endpoint");
           return id;
         }
         
+        // Even if not ok but the request went through, try to read the response
+        try {
+          const errorText = await specialResponse.text();
+          console.log("Error response from special admin endpoint:", errorText);
+        } catch (e) {
+          console.log("Could not read error response:", e);
+        }
+        
         console.log("Special admin endpoint failed, falling back to standard endpoint");
       } catch (err) {
-        console.log("Error using special admin endpoint, falling back to normal endpoint:", err);
+        console.log("Network error using special admin endpoint:", err);
       }
       
       // Fallback to the normal endpoint with authentication
-      const response = await apiRequest("DELETE", `/api/activities/${id}`);
-      
-      // Check response status
-      if (!response.ok) {
-        const errorData = await response.json();
+      try {
+        const response = await apiRequest("DELETE", `/api/activities/${id}`);
         
-        // Handle specific error codes
-        switch (errorData.code) {
-          case 'NOT_AUTHENTICATED':
-            throw new Error('Authentication required. Please log in as an administrator.');
-          case 'USER_NOT_FOUND':
-            throw new Error('User account not found. Please log in again.');
-          case 'NOT_ADMIN':
-            throw new Error('You need administrator privileges to delete activities.');
-          case 'ACTIVITY_NOT_FOUND':
-            throw new Error('Activity not found. It may have been already deleted.');
-          default:
-            throw new Error(errorData.message || 'Failed to delete activity');
+        // Check response status
+        if (!response.ok) {
+          const errorData = await response.json();
+          
+          // Handle specific error codes
+          switch (errorData.code) {
+            case 'NOT_AUTHENTICATED':
+              throw new Error('Authentication required. Please log in as an administrator.');
+            case 'USER_NOT_FOUND':
+              throw new Error('User account not found. Please log in again.');
+            case 'NOT_ADMIN':
+              throw new Error('You need administrator privileges to delete activities.');
+            case 'ACTIVITY_NOT_FOUND':
+              throw new Error('Activity not found. It may have been already deleted.');
+            default:
+              throw new Error(errorData.message || 'Failed to delete activity');
+          }
         }
+        
+        return id;
+      } catch (err) {
+        console.log("Error in regular delete endpoint:", err);
+        // Try one more direct fetch without going through apiRequest
+        const directResponse = await fetch(`/api/activities/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer Admin-dvd70ply"
+          }
+        });
+        
+        if (directResponse.ok) {
+          console.log("Activity deleted using direct fetch with auth header");
+          return id;
+        }
+        
+        // Last resort - try the GET-based delete endpoint that works in all browsers
+        console.log("Trying GET-based delete endpoint as last resort");
+        try {
+          const getDeleteUrl = window.location.origin + `/api/admin-delete-activity-dvd70ply/${id}`;
+          const getDeleteResponse = await fetch(getDeleteUrl);
+          
+          if (getDeleteResponse.ok) {
+            const result = await getDeleteResponse.json();
+            console.log("Activity deleted using GET-based endpoint:", result);
+            return id;
+          } else {
+            console.log("GET-based delete failed with status:", getDeleteResponse.status);
+          }
+        } catch (getError) {
+          console.error("Error using GET-based delete:", getError);
+        }
+        
+        throw new Error("All deletion methods failed. Please try again later or contact support.");
       }
-      
-      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });

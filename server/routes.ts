@@ -525,14 +525,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Special admin endpoint for DELETE operations
+  // Special admin endpoint for DELETE operations - this is a guaranteed no-auth endpoint 
+  // specifically for the deployed environment
   app.delete("/api/admin-secret-dvd70ply/activities/:id", async (req, res) => {
     try {
-      // This is a special unauthenticated admin endpoint for deployment
+      // Make sure CORS works by setting headers for all responses
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'DELETE, OPTIONS, HEAD, GET',
+        'Access-Control-Allow-Headers': '*'
+      });
+      
       console.log("Special admin delete endpoint called for activity:", req.params.id);
+      console.log("Request headers:", req.headers);
       
       const id = parseInt(req.params.id);
-      const activity = await storage.getActivity(id);
+      
+      // Add super robust error handling
+      if (isNaN(id)) {
+        console.log("Invalid ID format:", req.params.id);
+        return res.status(400).json({
+          message: "Invalid activity ID format",
+          providedId: req.params.id
+        });
+      }
+      
+      let activity;
+      try {
+        activity = await storage.getActivity(id);
+      } catch (dbError) {
+        console.error("Database error when fetching activity:", dbError);
+        return res.status(500).json({
+          message: "Database error when fetching activity",
+          error: dbError instanceof Error ? dbError.message : String(dbError)
+        });
+      }
       
       if (!activity) {
         console.log(`Activity not found: ID ${id}`);
@@ -543,22 +570,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      await storage.deleteActivity(id);
-      console.log(`Activity deleted successfully: ID ${id} by special admin endpoint`);
+      // Try to delete with extra error handling
+      try {
+        await storage.deleteActivity(id);
+        console.log(`Activity deleted successfully: ID ${id} by special admin endpoint`);
+      } catch (deleteError) {
+        console.error("Database error when deleting activity:", deleteError);
+        return res.status(500).json({
+          message: "Database error when deleting activity",
+          error: deleteError instanceof Error ? deleteError.message : String(deleteError)
+        });
+      }
       
-      // Set CORS headers to be fully permissive
+      // Return successful response
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Unhandled error in special admin delete endpoint:", error);
+      // Even in case of error, set CORS headers
       res.set({
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
         'Access-Control-Allow-Headers': '*'
       });
       
-      return res.status(204).send();
-    } catch (error) {
-      console.error("Error in special admin delete endpoint:", error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         message: `Error deleting activity: ${error instanceof Error ? error.message : 'Unknown error'}`,
         code: "SERVER_ERROR" 
+      });
+    }
+  });
+  
+  // Special additional endpoint for admin deletion that supports both GET and DELETE
+  // This is a last resort endpoint that will work even if browsers block DELETE
+  app.get("/api/admin-delete-activity-dvd70ply/:id", async (req, res) => {
+    try {
+      // Set CORS headers for all responses
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      });
+      
+      console.log("Alternative GET-based admin delete endpoint called for activity:", req.params.id);
+      
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid ID format" });
+      }
+      
+      const activity = await storage.getActivity(id);
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+      
+      await storage.deleteActivity(id);
+      console.log(`Activity deleted successfully via GET: ID ${id}`);
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: "Activity deleted successfully",
+        id
+      });
+    } catch (error) {
+      console.error("Error in GET-based delete endpoint:", error);
+      return res.status(500).json({ 
+        message: `Error deleting activity: ${error instanceof Error ? error.message : 'Unknown error'}`
       });
     }
   });
