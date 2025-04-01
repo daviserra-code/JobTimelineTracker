@@ -13,6 +13,7 @@ import { OnboardingTour } from "@/components/onboarding-tour";
 import { useEffect, useCallback } from "react";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { useTheme } from "@/hooks/use-theme";
+import ProtectedAdminRoute from "@/components/protected-admin-route";
 
 
 function Router() {
@@ -150,7 +151,7 @@ function Router() {
       <div className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/account" component={AccountPage} />
+          <ProtectedAdminRoute path="/account" component={AccountPage} />
           <Route path="/login" component={LoginPage} />
           <Route component={NotFound} />
         </Switch>

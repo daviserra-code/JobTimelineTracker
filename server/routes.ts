@@ -1059,7 +1059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update user role
+  // Update user role (regular method requires session)
   app.patch("/api/users/role", async (req, res) => {
     try {
       const userId = req.session.userId || 1; // Default to user 1 for demo
@@ -1084,6 +1084,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userWithoutPassword);
     } catch (error) {
       res.status(500).json({ message: `Error updating user role: ${error instanceof Error ? error.message : 'Unknown error'}` });
+    }
+  });
+  
+  // Special admin role update endpoint with direct access using admin key
+  app.patch("/api/users/admin-role", async (req, res) => {
+    try {
+      const { adminKey, role } = req.body;
+      
+      // Verify admin key
+      if (adminKey !== "dvd70ply") {
+        return res.status(401).json({ message: "Invalid admin key" });
+      }
+      
+      if (!role || (role !== "admin" && role !== "user")) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      // Find Administrator user
+      const user = await storage.getUserByUsername("Administrator");
+      
+      if (!user) {
+        return res.status(404).json({ message: "Administrator user not found" });
+      }
+      
+      // Update role for Administrator to always be admin
+      const updatedUser = await storage.updateUser(user.id, { role: "admin" });
+      
+      // Don't send password to client
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      console.log(`Admin role updated successfully for user ${user.username} using admin key`);
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating admin role:", error);
+      res.status(500).json({ message: `Error updating admin role: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
   
