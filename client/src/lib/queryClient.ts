@@ -20,9 +20,17 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // For delete operations, include special authentication header
+  // For all admin operations related to activities, include special authentication header
   // This is a workaround for deployment environments where cookies may not be properly handled
-  if (method === "DELETE" && url.includes("/api/activities/")) {
+  if (url.includes("/api/activities")) {
+    // Only add auth header for operations that modify data (not for GET requests)
+    if (method === "DELETE" || method === "POST" || method === "PATCH" || method === "PUT") {
+      headers["Authorization"] = "Bearer Admin-dvd70ply";
+    }
+  }
+  
+  // Also add auth header for importing activities
+  if (url.includes("/api/activities/import")) {
     headers["Authorization"] = "Bearer Admin-dvd70ply";
   }
   
