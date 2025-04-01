@@ -113,6 +113,26 @@ export function useActivities(props?: UseActivitiesProps) {
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await apiRequest("DELETE", `/api/activities/${id}`);
+      
+      // Check response status
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // Handle specific error codes
+        switch (errorData.code) {
+          case 'NOT_AUTHENTICATED':
+            throw new Error('Authentication required. Please log in as an administrator.');
+          case 'USER_NOT_FOUND':
+            throw new Error('User account not found. Please log in again.');
+          case 'NOT_ADMIN':
+            throw new Error('You need administrator privileges to delete activities.');
+          case 'ACTIVITY_NOT_FOUND':
+            throw new Error('Activity not found. It may have been already deleted.');
+          default:
+            throw new Error(errorData.message || 'Failed to delete activity');
+        }
+      }
+      
       return id;
     },
     onSuccess: () => {
@@ -124,9 +144,10 @@ export function useActivities(props?: UseActivitiesProps) {
       });
     },
     onError: (error) => {
+      console.error("Delete activity error:", error);
       toast({
         title: "Error",
-        description: `Failed to delete activity: ${error.message}`,
+        description: error.message || "Failed to delete activity",
         variant: "destructive",
       });
     }

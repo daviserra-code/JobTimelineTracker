@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Activity } from "@shared/schema";
 import { useActivities } from "@/hooks/use-activities";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface DeleteActivityDialogProps {
   activity: Activity | null;
@@ -23,12 +26,29 @@ export default function DeleteActivityDialog({
   onOpenChange,
 }: DeleteActivityDialogProps) {
   const { deleteActivity } = useActivities();
+  const { isAdmin, user } = useAuth();
+  const { toast } = useToast();
+  const [_, navigate] = useLocation();
   
   const handleDelete = () => {
-    if (activity) {
-      deleteActivity(activity.id);
+    if (!activity) return;
+    
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "You need administrator privileges to delete activities.",
+        variant: "destructive"
+      });
+      
+      // Offer the option to login as admin
+      navigate("/login");
       onOpenChange(false);
+      return;
     }
+    
+    // Proceed with deletion if admin
+    deleteActivity(activity.id);
+    onOpenChange(false);
   };
   
   return (

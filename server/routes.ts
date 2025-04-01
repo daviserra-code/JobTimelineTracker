@@ -226,23 +226,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete an activity
   app.delete("/api/activities/:id", async (req, res) => {
     try {
-      // Check if user is an admin
-      const user = await getCurrentUser(req);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Permission denied: Admin role required" });
+      // Debug: Log session info
+      console.log("Session data for delete activity:", req.session);
+      
+      // Check if user is logged in
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ 
+          message: "Authentication required: You must be logged in as an administrator",
+          code: "NOT_AUTHENTICATED"
+        });
       }
       
+      // Get user and check role
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ 
+          message: "User not found in database",
+          code: "USER_NOT_FOUND"
+        });
+      }
+      
+      if (user.role !== "admin") {
+        return res.status(403).json({ 
+          message: "Permission denied: Admin role required", 
+          code: "NOT_ADMIN",
+          userRole: user.role
+        });
+      }
+      
+      // Process deletion
       const id = parseInt(req.params.id);
       const activity = await storage.getActivity(id);
       
       if (!activity) {
-        return res.status(404).json({ message: "Activity not found" });
+        return res.status(404).json({ 
+          message: "Activity not found",
+          code: "ACTIVITY_NOT_FOUND" 
+        });
       }
       
       await storage.deleteActivity(id);
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: `Error deleting activity: ${error instanceof Error ? error.message : 'Unknown error'}` });
+      console.error("Error deleting activity:", error);
+      res.status(500).json({ 
+        message: `Error deleting activity: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        code: "SERVER_ERROR" 
+      });
     }
   });
   

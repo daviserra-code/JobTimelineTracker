@@ -20,27 +20,44 @@ export default function LoginPage() {
   const { mutate, isPending } = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
       const response = await apiRequest("POST", "/api/auth/login", credentials);
+      
+      if (!response.ok) {
+        // Try to extract error message from response
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Authentication failed");
+        } catch (e) {
+          // If we can't parse the JSON, use status text
+          throw new Error(response.statusText || "Authentication failed");
+        }
+      }
+      
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (userData) => {
       // On successful login, invalidate the current user data cache
       queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
       
-      // Show success message
+      // Show role-specific success message
       toast({
         title: "Login successful",
-        description: "You have been logged in successfully",
+        description: `You are now logged in as: ${userData.username} (${userData.role})`,
       });
       
       // Redirect to the homepage
       setLocation("/");
     },
     onError: (error) => {
+      console.error("Login error:", error);
+      
       toast({
         title: "Login failed",
-        description: error.message || "Invalid credentials",
+        description: error.message || "Invalid credentials. Please check your username and password.",
         variant: "destructive",
       });
+      
+      // Clear password field on error
+      setPassword("");
     },
   });
 
