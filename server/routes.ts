@@ -600,18 +600,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Special additional endpoint for admin deletion that supports both GET and DELETE
-  // This is a last resort endpoint that will work even if browsers block DELETE
+  // Special additional endpoint for admin deletion that supports GET method
+  // This is specifically designed for deployment environments where DELETE might be blocked
   app.get("/api/admin-delete-activity-dvd70ply/:id", async (req, res) => {
     try {
-      // Set CORS headers for all responses
+      // Set permissive CORS and cache headers for cross-domain operations
       res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': '*'
+        'Access-Control-Allow-Origin': req.headers.origin || '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS, POST',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Key',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
       });
       
-      console.log("Alternative GET-based admin delete endpoint called for activity:", req.params.id);
+      console.log("Alternative GET-based admin delete endpoint called for activity:", req.params.id, "Session ID:", req.session.id);
       
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -623,13 +628,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Activity not found" });
       }
       
+      // Process deletion
       await storage.deleteActivity(id);
       console.log(`Activity deleted successfully via GET: ID ${id}`);
       
+      // If the user is logged in as Administrator, make sure to maintain admin role
+      let loggedInUser = null;
+      if (req.session.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          loggedInUser = { id: user.id, username: user.username, role: user.role };
+          
+          if (user.username === 'Administrator' && user.role !== 'admin') {
+            // Ensure role is admin for Administrator user
+            await storage.updateUser(user.id, { role: 'admin' });
+            loggedInUser.role = 'admin';
+            console.log(`Updated Administrator role to admin for user ID ${user.id}`);
+          }
+        }
+      }
+      
+      // Save session to ensure it persists
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+      
+      // Return success with session debug info
       return res.status(200).json({ 
         success: true, 
         message: "Activity deleted successfully",
-        id
+        id,
+        session: {
+          id: req.session.id,
+          userId: req.session.userId,
+          user: loggedInUser
+        }
       });
     } catch (error) {
       console.error("Error in GET-based delete endpoint:", error);
