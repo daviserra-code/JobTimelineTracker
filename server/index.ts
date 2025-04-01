@@ -6,12 +6,20 @@ import cors from 'cors';
 
 const app = express();
 
-// Configure CORS for cross-domain requests
+// Configure CORS for cross-domain requests - set to be fully permissive for deployed environment
 app.use(cors({
-  origin: true, // Allow any origin in development
+  origin: "*", // Allow any origin
   credentials: true, // Allow cookies to be sent with requests
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials']
+}));
+
+// Add CORS pre-flight options for all routes to handle browser preflight requests
+app.options('*', cors({
+  origin: "*",
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 app.use(express.json());

@@ -12,9 +12,23 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // For special admin operations, add authorization header
+  // This is specifically for the deployed environment where cookies might not work
+  const headers: Record<string, string> = {};
+  
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  // For delete operations, include special authentication header
+  // This is a workaround for deployment environments where cookies may not be properly handled
+  if (method === "DELETE" && url.includes("/api/activities/")) {
+    headers["Authorization"] = "Bearer Admin-dvd70ply";
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
