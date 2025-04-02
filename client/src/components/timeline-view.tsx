@@ -150,11 +150,14 @@ export default function TimelineView({
 }: TimelineViewProps) {
   // Group activities by type for display
   const projectActivities = activities.filter(a => a.type === 'project');
-  const courseDevActivities = activities.filter(a => a.type === 'meeting');
+  const meetingActivities = activities.filter(a => a.type === 'meeting');
+  const trainingActivities = activities.filter(a => a.type === 'training');
   const holidayActivities = activities.filter(a => a.type === 'holiday');
-  const confirmedActivities = activities.filter(a => a.type === 'confirmed');
-  const tentativeActivities = activities.filter(a => a.type === 'tentative');
-  const hypotheticalActivities = activities.filter(a => a.type === 'hypothetical');
+  
+  // Group activities by status for display
+  const confirmedActivities = activities.filter(a => a.status === 'confirmed');
+  const tentativeActivities = activities.filter(a => a.status === 'tentative');
+  const hypotheticalActivities = activities.filter(a => a.status === 'hypothetical');
   
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6 tour-timeline">
@@ -195,10 +198,20 @@ export default function TimelineView({
               />
             )}
             
-            {courseDevActivities.length > 0 && (
+            {meetingActivities.length > 0 && (
               <TimelineActivityRow 
-                title="Course Development" 
-                activities={courseDevActivities} 
+                title="Meetings" 
+                activities={meetingActivities} 
+                year={year}
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
+              />
+            )}
+            
+            {trainingActivities.length > 0 && (
+              <TimelineActivityRow 
+                title="Training & Development" 
+                activities={trainingActivities} 
                 year={year}
                 onActivityClick={onActivityClick}
                 onActivityContextMenu={onActivityContextMenu}
