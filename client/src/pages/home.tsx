@@ -179,6 +179,9 @@ export default function Home() {
            (startYear < currentYear && endYear > currentYear);
   });
   
+  // Apply active filters to activities
+  const filteredActivities = currentYearActivities;
+  
   const changeYear = (year: number) => {
     if (year >= YEARS[0] && year <= YEARS[YEARS.length - 1]) {
       setCurrentYear(year);
@@ -237,6 +240,7 @@ export default function Home() {
             currentWeek={currentWeek}
             currentDay={currentDay}
             currentViewMode={viewMode}
+            activities={filteredActivities}
             onYearChange={changeYear}
             onMonthChange={changeMonth}
             onWeekChange={changeWeek}

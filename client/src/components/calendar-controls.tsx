@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ViewMode } from "@shared/schema";
+import { ViewMode, Activity } from "@shared/schema";
 import { VIEW_MODES, YEARS, MONTHS } from "@/lib/constants";
 import { format, getDaysInMonth, startOfMonth, endOfMonth, eachWeekOfInterval, getISOWeek, setISOWeek, getISOWeeksInYear } from "date-fns";
 import { getISOWeekNumber, getAllISOWeeksForYear } from "@/lib/dates";
 import { useAuth } from "@/hooks/use-auth";
+import ActivityStatsExport from "@/components/activity-stats-export";
 
 interface CalendarControlsProps {
   currentYear: number;
@@ -12,6 +13,7 @@ interface CalendarControlsProps {
   currentWeek?: number;
   currentDay?: number;
   currentViewMode: ViewMode;
+  activities: Activity[];
   onYearChange: (year: number) => void;
   onMonthChange?: (month: number) => void;
   onWeekChange?: (week: number) => void;
@@ -27,6 +29,7 @@ export default function CalendarControls({
   currentWeek = 1,
   currentDay = 1,
   currentViewMode,
+  activities = [],
   onYearChange,
   onMonthChange = () => {},
   onWeekChange = () => {},
@@ -211,6 +214,10 @@ export default function CalendarControls({
                 <span className="material-icons text-sm mr-1">download</span>
                 <span className="hidden sm:inline">Import/Export</span>
               </Button>
+            </div>
+            
+            <div className="relative">
+              <ActivityStatsExport activities={activities} />
             </div>
             
             {/* Only show Add Activity button for admin users */}
