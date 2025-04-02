@@ -1,15 +1,9 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { Activity, ActivityType } from '@shared/schema';
 import { format } from 'date-fns';
 import { ACTIVITY_TYPES } from './constants';
 
-// Add type definition for jsPDF with autotable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+// No custom type definitions needed anymore
 
 // Helper function to calculate activity duration in days
 function calculateDurationInDays(start: Date, end: Date): number {
@@ -122,7 +116,7 @@ export function generateActivityStatisticsPDF(activities: Activity[]): void {
       throw new Error('No activities to process');
     }
     
-    // Create new PDF document
+    // Create a simple PDF document with text only - avoiding autoTable complexity
     const doc = new jsPDF();
     const stats = generateActivityStats(activities);
     
@@ -150,57 +144,48 @@ export function generateActivityStatisticsPDF(activities: Activity[]): void {
       doc.text(`Shortest Activity: ${stats.shortestActivity.title} (${stats.shortestActivity.duration} days)`, 14, 66);
     }
     
-    // Activities by Type Table
+    // Activities by Type Section
     doc.setFontSize(14);
     doc.text('Activities by Type', 14, 80);
+    doc.setFontSize(11);
     
-    const typeTableData = Object.entries(stats.byType)
+    let yPos = 90;
+    Object.entries(stats.byType)
       .filter(([_, data]) => data.count > 0)
-      .map(([type, data]) => {
+      .forEach(([type, data]) => {
         const typeLabel = ACTIVITY_TYPES[type as keyof typeof ACTIVITY_TYPES]?.label || type;
-        return [typeLabel, data.count.toString(), data.totalDays.toString(), (data.totalDays / data.count).toFixed(1)];
+        doc.text(`${typeLabel}: ${data.count} (${data.totalDays} days, avg: ${(data.totalDays / data.count).toFixed(1)} days)`, 20, yPos);
+        yPos += 7;
       });
     
-    // Create first table
-    doc.autoTable({
-      startY: 85,
-      head: [['Type', 'Count', 'Total Days', 'Avg. Duration']],
-      body: typeTableData
-    });
-    
-    // Add a page for the other tables
+    // Add a new page for more statistics
     doc.addPage();
     
-    // Activities by Status Table
+    // Activities by Status Section
     doc.setFontSize(14);
     doc.text('Activities by Status', 14, 20);
+    doc.setFontSize(11);
     
-    const statusTableData = Object.entries(stats.byStatus)
-      .map(([status, count]) => [
-        status.charAt(0).toUpperCase() + status.slice(1), 
-        count.toString(), 
-        `${((count / stats.totalActivities) * 100).toFixed(1)}%`
-      ]);
-    
-    doc.autoTable({
-      startY: 25,
-      head: [['Status', 'Count', 'Percentage']],
-      body: statusTableData
+    yPos = 30;
+    Object.entries(stats.byStatus).forEach(([status, count]) => {
+      const percentage = ((count / stats.totalActivities) * 100).toFixed(1);
+      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+      doc.text(`${statusLabel}: ${count} (${percentage}%)`, 20, yPos);
+      yPos += 7;
     });
     
-    // Activities by Year Table
+    // Activities by Year Section
     doc.setFontSize(14);
-    doc.text('Activities by Year', 14, 100);
+    doc.text('Activities by Year', 14, 60);
+    doc.setFontSize(11);
     
-    const yearTableData = Object.entries(stats.byYear)
+    yPos = 70;
+    Object.entries(stats.byYear)
       .sort((a, b) => Number(a[0]) - Number(b[0]))
-      .map(([year, count]) => [year, count.toString()]);
-    
-    doc.autoTable({
-      startY: 105,
-      head: [['Year', 'Count']],
-      body: yearTableData
-    });
+      .forEach(([year, count]) => {
+        doc.text(`${year}: ${count} activities`, 20, yPos);
+        yPos += 7;
+      });
     
     // Add footer with page number
     const pageCount = doc.getNumberOfPages();
