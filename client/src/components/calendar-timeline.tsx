@@ -152,7 +152,7 @@ export function TimelineActivityRow({ title, activities, year }: TimelineActivit
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 + (index * 0.08) }}
               >
-                {activity.title}
+                {activity.title} <span className="opacity-80 text-[10px] ml-1">({ACTIVITY_TYPES[type].label})</span>
               </motion.span>
             </motion.div>
           );

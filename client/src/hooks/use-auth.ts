@@ -13,6 +13,11 @@ export function useAuth() {
   const { toast } = useToast();
   const { hasAdminToken, getAdminUsername, setAdminToken, clearAdminToken } = useAdminToken();
   
+  // Initially clear any existing admin tokens to ensure default role is 'user'
+  useEffect(() => {
+    clearAdminToken();
+  }, []);
+  
   const { data: user, isLoading, error, refetch } = useQuery<AuthUser>({
     queryKey: ["/api/users/me"],
     staleTime: 5 * 60 * 1000, // 5 minutes

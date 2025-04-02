@@ -2,6 +2,8 @@
  * This hook manages a special admin token that's stored in localStorage
  * This is a simpler and more reliable approach for the deployed environment
  * where session cookies might not work properly
+ * 
+ * Default user must have 'user' role, not 'admin' - Admin authentication is only via explicit login
  */
 
 const ADMIN_TOKEN_KEY = 'admin_token_dvd70ply';
