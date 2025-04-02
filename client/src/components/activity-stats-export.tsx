@@ -5,6 +5,7 @@ import { generateActivityStatisticsPDF } from '@/lib/pdf-export';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ActivityStatsExportProps {
   activities: Activity[];
@@ -13,7 +14,13 @@ interface ActivityStatsExportProps {
 
 export default function ActivityStatsExport({ activities, className = '' }: ActivityStatsExportProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Hide the component for non-admin users
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
 
   const handleExportPDF = async () => {
     if (isGenerating) return;
@@ -74,7 +81,7 @@ export default function ActivityStatsExport({ activities, className = '' }: Acti
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Export activity statistics to PDF</p>
+          <p>Export activity statistics to PDF (Admin only)</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
