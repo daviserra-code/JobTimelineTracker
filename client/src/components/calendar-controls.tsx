@@ -4,6 +4,7 @@ import { ViewMode } from "@shared/schema";
 import { VIEW_MODES, YEARS, MONTHS } from "@/lib/constants";
 import { format, getDaysInMonth, startOfMonth, endOfMonth, eachWeekOfInterval, getISOWeek, setISOWeek, getISOWeeksInYear } from "date-fns";
 import { getISOWeekNumber, getAllISOWeeksForYear } from "@/lib/dates";
+import { useAuth } from "@/hooks/use-auth";
 
 interface CalendarControlsProps {
   currentYear: number;
@@ -34,6 +35,8 @@ export default function CalendarControls({
   onOpenAddActivity,
   onOpenImportExport
 }: CalendarControlsProps) {
+  // Get authentication status to conditionally show admin features
+  const { isAdmin } = useAuth();
   const goToPreviousPeriod = () => {
     if (currentViewMode === "timeline") {
       if (currentYear > YEARS[0]) {
@@ -210,17 +213,20 @@ export default function CalendarControls({
               </Button>
             </div>
             
-            <div className="tour-add-activity">
-              <Button 
-                onClick={onOpenAddActivity}
-                className="rounded-full bg-primary text-white p-3 md:px-4 md:py-2 flex items-center shadow-md hover:bg-opacity-90"
-                data-new-activity="true"
-                title="Add new activity (N key)"
-              >
-                <span className="material-icons md:mr-1">add</span>
-                <span className="hidden md:inline">Add Activity</span>
-              </Button>
-            </div>
+            {/* Only show Add Activity button for admin users */}
+            {isAdmin && (
+              <div className="tour-add-activity">
+                <Button 
+                  onClick={onOpenAddActivity}
+                  className="rounded-full bg-primary text-white p-3 md:px-4 md:py-2 flex items-center shadow-md hover:bg-opacity-90"
+                  data-new-activity="true"
+                  title="Add new activity (N key)"
+                >
+                  <span className="material-icons md:mr-1">add</span>
+                  <span className="hidden md:inline">Add Activity</span>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

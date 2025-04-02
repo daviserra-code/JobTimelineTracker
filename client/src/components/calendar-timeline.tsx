@@ -202,26 +202,28 @@ export default function TimelineView({
   onZoomIn,
   onZoomOut
 }: TimelineViewProps) {
-  // Group activities by category for display
-  const projectActivities = activities.filter(a => a.type === 'project' || a.title.toLowerCase().includes('project'));
-  const courseDevActivities = activities.filter(a => a.type === 'meeting' || a.title.toLowerCase().includes('course') || a.title.toLowerCase().includes('development'));
-  const holidayActivities = activities.filter(a => a.type === 'holiday');
-  const trainingActivities = activities.filter(a => 
-    a.type === 'training' ||
-    a.title.toLowerCase().includes('training') || 
-    a.title.toLowerCase().includes('conference')
-  );
+  // Group activities by type for better organization
+  const types = ['project', 'meeting', 'training', 'holiday'] as const;
+  
+  // Create groupings for each activity type
+  const groupedActivities = types.reduce((acc, type) => {
+    acc[type] = activities.filter(a => a.type === type);
+    return acc;
+  }, {} as Record<string, Activity[]>);
+  
+  // Add a category for any activities that don't match the predefined types
   const otherActivities = activities.filter(a => 
-    a.type !== 'project' &&
-    a.type !== 'meeting' &&
-    a.type !== 'holiday' &&
-    a.type !== 'training' &&
-    !a.title.toLowerCase().includes('project') && 
-    !a.title.toLowerCase().includes('course') && 
-    !a.title.toLowerCase().includes('development') && 
-    !a.title.toLowerCase().includes('training') &&
-    !a.title.toLowerCase().includes('conference')
+    !types.includes(a.type as any)
   );
+  
+  // Get group labels from the ACTIVITY_TYPES constants
+  const typeLabels = {
+    project: 'Projects',
+    meeting: 'Meetings',
+    training: 'Training & Development',
+    holiday: 'Holidays',
+    other: 'Other Activities'
+  };
   
   return (
     <motion.div 
@@ -281,24 +283,21 @@ export default function TimelineView({
             initial="hidden"
             animate="visible"
           >
-            {projectActivities.length > 0 && (
-              <TimelineActivityRow title="Projects" activities={projectActivities} year={year} />
+            {/* Map through each activity type and render a row if there are activities */}
+            {types.map(type => 
+              groupedActivities[type]?.length > 0 && (
+                <TimelineActivityRow 
+                  key={type}
+                  title={typeLabels[type]} 
+                  activities={groupedActivities[type]} 
+                  year={year} 
+                />
+              )
             )}
             
-            {courseDevActivities.length > 0 && (
-              <TimelineActivityRow title="Course Development" activities={courseDevActivities} year={year} />
-            )}
-            
-            {holidayActivities.length > 0 && (
-              <TimelineActivityRow title="Holidays" activities={holidayActivities} year={year} />
-            )}
-            
-            {trainingActivities.length > 0 && (
-              <TimelineActivityRow title="Training & Conferences" activities={trainingActivities} year={year} />
-            )}
-            
+            {/* Render other activities that don't match predefined types */}
             {otherActivities.length > 0 && (
-              <TimelineActivityRow title="Other Activities" activities={otherActivities} year={year} />
+              <TimelineActivityRow title={typeLabels.other} activities={otherActivities} year={year} />
             )}
             
             {/* If there are no activities, show empty state */}

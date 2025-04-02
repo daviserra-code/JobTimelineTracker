@@ -6,6 +6,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Activity, InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
 import { format } from "date-fns";
 import { ActivityFilters } from "@/components/activity-filters";
+import { useAuth } from "@/hooks/use-auth";
 
 interface UseActivitiesProps {
   filters?: ActivityFilters;
@@ -13,6 +14,7 @@ interface UseActivitiesProps {
 
 export function useActivities(props?: UseActivitiesProps) {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const filters = props?.filters;
   
   // Create query parameters from filters
@@ -378,14 +380,64 @@ export function useActivities(props?: UseActivitiesProps) {
     }
   });
   
+  // Check for admin permissions before allowing mutations
+  const createActivity = (activity: InsertActivity) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "You need administrator privileges to create activities",
+        variant: "destructive",
+      });
+      return;
+    }
+    createMutation.mutate(activity);
+  };
+  
+  const updateActivity = (params: { id: number, activity: Partial<Activity> }) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "You need administrator privileges to update activities",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateMutation.mutate(params);
+  };
+  
+  const deleteActivity = (id: number) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "You need administrator privileges to delete activities",
+        variant: "destructive",
+      });
+      return;
+    }
+    deleteMutation.mutate(id);
+  };
+  
+  const importActivities = (activities: InsertActivity[]) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "You need administrator privileges to import activities",
+        variant: "destructive",
+      });
+      return;
+    }
+    importMutation.mutate(activities);
+  };
+
   return {
     activities: activities || [],
     isLoading,
     error,
-    createActivity: createMutation.mutate,
-    updateActivity: updateMutation.mutate,
-    deleteActivity: deleteMutation.mutate,
-    importActivities: importMutation.mutate,
-    isPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || importMutation.isPending
+    createActivity,
+    updateActivity,
+    deleteActivity,
+    importActivities,
+    isPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || importMutation.isPending,
+    isAdmin // Export isAdmin to allow UI components to conditionally render admin features
   };
 }
