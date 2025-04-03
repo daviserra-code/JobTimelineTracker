@@ -14,11 +14,11 @@ interface ActivityStatsExportProps {
 
 export default function ActivityStatsExport({ activities, className = '' }: ActivityStatsExportProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { isAdmin } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Hide the component for non-admin users
-  if (!user || user.role !== 'admin') {
+  if (!isAdmin) {
     return null;
   }
 
