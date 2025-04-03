@@ -216,9 +216,12 @@ export default function CalendarControls({
               </Button>
             </div>
             
-            <div className="relative">
-              <ActivityStatsExport activities={activities} />
-            </div>
+            {/* Only show Stats Export button for admin users */}
+            {isAdmin && (
+              <div className="relative">
+                <ActivityStatsExport activities={activities} />
+              </div>
+            )}
             
             {/* Only show Add Activity button for admin users */}
             {isAdmin && (
