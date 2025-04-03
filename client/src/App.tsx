@@ -14,6 +14,7 @@ import { useEffect, useCallback } from "react";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { useTheme } from "@/hooks/use-theme";
 import ProtectedAdminRoute from "@/components/protected-admin-route";
+import AdminLoginButton from "@/components/admin-login-button";
 
 
 function Router() {
@@ -160,6 +161,9 @@ function Router() {
       <div className="fixed bottom-4 left-4 z-50 hidden md:block">
         <KeyboardShortcuts />
       </div>
+      
+      {/* Direct admin login button - for emergency access */}
+      <AdminLoginButton />
     </div>
   );
 }

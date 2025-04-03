@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Activity } from '@shared/schema';
 import { generateActivityStatisticsPDF } from '@/lib/pdf-export';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+
+// Constants for admin auth - directly included to avoid dependency on hooks
+const ADMIN_TOKEN_KEY = 'admin_token_dvd70ply';
+const ADMIN_TOKEN_VALUE = 'Administrator-dvd70ply';
 
 interface ActivityStatsExportProps {
   activities: Activity[];
@@ -14,8 +17,19 @@ interface ActivityStatsExportProps {
 
 export default function ActivityStatsExport({ activities, className = '' }: ActivityStatsExportProps) {
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Check admin status directly from localStorage
+  useEffect(() => {
+    try {
+      const isAdminUser = localStorage.getItem(ADMIN_TOKEN_KEY) === ADMIN_TOKEN_VALUE;
+      setIsAdmin(isAdminUser);
+    } catch (err) {
+      console.error('Error checking admin status:', err);
+      setIsAdmin(false);
+    }
+  }, []);
   
   // Hide the component for non-admin users
   if (!isAdmin) {
