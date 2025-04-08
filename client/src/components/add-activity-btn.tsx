@@ -1,46 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
 
-// Constants for admin auth - directly included to avoid dependency on hooks
+// Constants for admin check - hardcoded for reliability
 const ADMIN_TOKEN_KEY = 'admin_token_dvd70ply';
 const ADMIN_TOKEN_VALUE = 'Administrator-dvd70ply';
+const ADMIN_KEY = 'dvd70ply'; // Secret key used for direct verification
 
 interface AddActivityButtonProps {
   onClick: () => void;
 }
 
 export default function AddActivityBtn({ onClick }: AddActivityButtonProps) {
-  const { isAdmin: authIsAdmin, user } = useAuth();
-  const [isLocalAdmin, setIsLocalAdmin] = useState(false);
+  // Directly check localStorage on each render - no state or hooks for simplicity
+  // This makes the component more resilient to state updates and async issues
+  let isAdmin = false;
   
-  // Check admin status from both localStorage and auth hook
-  useEffect(() => {
-    try {
-      const isAdminUser = localStorage.getItem(ADMIN_TOKEN_KEY) === ADMIN_TOKEN_VALUE;
-      setIsLocalAdmin(isAdminUser);
-      
-      // If localStorage indicates admin but auth doesn't, try to refresh auth status
-      if (isAdminUser && !authIsAdmin && user?.username !== 'Administrator') {
-        // This will only execute once to try to reconcile the admin state
-        fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: 'Administrator', password: 'dvd70ply' }),
-          credentials: 'include'
-        }).catch(err => console.error('Error during auto-login:', err));
-      }
-    } catch (err) {
-      console.error('Error checking admin status:', err);
-      setIsLocalAdmin(false);
+  try {
+    // Method 1: Check localStorage token
+    if (localStorage.getItem(ADMIN_TOKEN_KEY) === ADMIN_TOKEN_VALUE) {
+      isAdmin = true;
     }
-  }, [authIsAdmin, user]);
-  
-  // Use both auth sources - either one indicating admin is sufficient
-  const combinedAdminStatus = authIsAdmin || isLocalAdmin;
+    
+    // Method 2: Check URL for admin key (for deployed environments)
+    if (window.location.href.includes(ADMIN_KEY)) {
+      isAdmin = true;
+      // Also set localStorage for future use
+      localStorage.setItem(ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE);
+      localStorage.setItem('admin_username', 'Administrator');
+    }
+    
+    // Method 3: Look for a specially named cookie (fallback)
+    if (document.cookie.includes('admin_auth_dvd70ply=true')) {
+      isAdmin = true;
+    }
+  } catch (err) {
+    console.error('Error checking admin status:', err);
+  }
   
   // Hide the component for non-admin users
-  if (!combinedAdminStatus) {
+  if (!isAdmin) {
     return null;
   }
 
