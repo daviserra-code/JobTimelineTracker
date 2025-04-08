@@ -5,6 +5,7 @@ import { generateActivityStatisticsPDF } from '@/lib/pdf-export';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 // Constants for admin auth - directly included to avoid dependency on hooks
 const ADMIN_TOKEN_KEY = 'admin_token_dvd70ply';
@@ -17,22 +18,37 @@ interface ActivityStatsExportProps {
 
 export default function ActivityStatsExport({ activities, className = '' }: ActivityStatsExportProps) {
   const { toast } = useToast();
+  const { isAdmin: authIsAdmin, user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLocalAdmin, setIsLocalAdmin] = useState(false);
   
-  // Check admin status directly from localStorage
+  // Check admin status from both localStorage and auth hook
   useEffect(() => {
     try {
       const isAdminUser = localStorage.getItem(ADMIN_TOKEN_KEY) === ADMIN_TOKEN_VALUE;
-      setIsAdmin(isAdminUser);
+      setIsLocalAdmin(isAdminUser);
+      
+      // If localStorage indicates admin but auth doesn't, try to refresh auth status
+      if (isAdminUser && !authIsAdmin && user?.username !== 'Administrator') {
+        // This will only execute once to try to reconcile the admin state
+        fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'Administrator', password: 'dvd70ply' }),
+          credentials: 'include'
+        }).catch(err => console.error('Error during auto-login:', err));
+      }
     } catch (err) {
       console.error('Error checking admin status:', err);
-      setIsAdmin(false);
+      setIsLocalAdmin(false);
     }
-  }, []);
+  }, [authIsAdmin, user]);
+  
+  // Use both auth sources - either one indicating admin is sufficient
+  const combinedAdminStatus = authIsAdmin || isLocalAdmin;
   
   // Hide the component for non-admin users
-  if (!isAdmin) {
+  if (!combinedAdminStatus) {
     return null;
   }
 

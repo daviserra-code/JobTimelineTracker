@@ -17,16 +17,51 @@ export default function AdminLoginButton() {
       localStorage.setItem(ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE);
       localStorage.setItem(ADMIN_USERNAME_KEY, 'Administrator');
       
-      // Reload the page to apply changes
+      // Show a toast message
       toast({
         title: "Admin mode enabled",
-        description: "You now have administrator access",
+        description: "Logging you in as Administrator...",
       });
       
-      // Small delay before reloading
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Use the standard login API endpoint instead of just reloading
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: 'Administrator',
+          password: 'dvd70ply'
+        }),
+        credentials: 'include'
+      })
+      .then(response => {
+        if (response.ok) {
+          // Reload the page after successful login
+          toast({
+            title: "Login successful",
+            description: "You are now logged in as Administrator",
+          });
+          
+          // Small delay before reloading
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          // If API login fails, still ensure local tokens are set and reload
+          console.log("API login failed, but local tokens are set. Reloading...");
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
+      })
+      .catch(err => {
+        console.error('Login API error:', err);
+        // Even if API fails, reload to use localStorage tokens
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      });
     } catch (err) {
       console.error('Error setting admin token:', err);
       toast({

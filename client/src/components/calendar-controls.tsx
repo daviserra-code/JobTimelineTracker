@@ -6,6 +6,7 @@ import { format, getDaysInMonth, startOfMonth, endOfMonth, eachWeekOfInterval, g
 import { getISOWeekNumber, getAllISOWeeksForYear } from "@/lib/dates";
 import { useAuth } from "@/hooks/use-auth";
 import ActivityStatsExport from "@/components/activity-stats-export";
+import AddActivityBtn from "@/components/add-activity-btn";
 
 interface CalendarControlsProps {
   currentYear: number;
@@ -221,20 +222,8 @@ export default function CalendarControls({
               <ActivityStatsExport activities={activities} />
             </div>
             
-            {/* Only show Add Activity button for admin users */}
-            {isAdmin && (
-              <div className="tour-add-activity">
-                <Button 
-                  onClick={onOpenAddActivity}
-                  className="rounded-full bg-primary text-white p-3 md:px-4 md:py-2 flex items-center shadow-md hover:bg-opacity-90"
-                  data-new-activity="true"
-                  title="Add new activity (N key)"
-                >
-                  <span className="material-icons md:mr-1">add</span>
-                  <span className="hidden md:inline">Add Activity</span>
-                </Button>
-              </div>
-            )}
+            {/* Add Activity button now uses self-checking component */}
+            <AddActivityBtn onClick={onOpenAddActivity} />
           </div>
         </div>
       </div>
