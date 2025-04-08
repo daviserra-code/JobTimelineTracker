@@ -167,7 +167,11 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(insertNotification).returning();
+    // Ensure we only insert fields that exist in the actual database table
+    const { method, status, errorMessage, ...validFields } = insertNotification as any;
+    
+    // Insert only the valid fields that exist in the table
+    const result = await db.insert(notifications).values(validFields).returning();
     return result[0];
   }
   
@@ -178,8 +182,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Notification with ID ${id} not found`);
     }
     
+    // Filter out fields that don't exist in the database
+    const { method, status, errorMessage, sentAt, createdAt, ...validFields } = notificationData as any;
+    
     const result = await db.update(notifications)
-      .set(notificationData)
+      .set(validFields)
       .where(eq(notifications.id, id))
       .returning();
     
