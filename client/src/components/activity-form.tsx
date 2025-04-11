@@ -100,11 +100,19 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
     try {
       if (actionType === "create") {
         await createActivity(activityData);
+        
+        // Dispatch our custom event to make sure UI refreshes
+        window.dispatchEvent(new CustomEvent('activity-changed'));
+        console.log('🆕 Created new activity and triggered refresh');
       } else if (actionType === "edit" && initialData) {
         // For editing, we need to get the ID from the initialData which might be cast as Activity
         const activityId = (initialData as any).id;
         if (activityId) {
           await updateActivity({ id: activityId, activity: activityData });
+          
+          // Dispatch our custom event to make sure UI refreshes
+          window.dispatchEvent(new CustomEvent('activity-changed'));
+          console.log('✏️ Updated activity and triggered refresh');
         }
       }
       
@@ -117,6 +125,28 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       if (user?.username === 'Administrator') {
         console.log('Setting admin token after error');
         setAdminToken();
+        
+        // Try again silently with the new admin token
+        try {
+          if (actionType === "create") {
+            await createActivity(activityData);
+          } else if (actionType === "edit" && initialData) {
+            const activityId = (initialData as any).id;
+            if (activityId) {
+              await updateActivity({ id: activityId, activity: activityData });
+            }
+          }
+          
+          // Dispatch our custom event to make sure UI refreshes
+          window.dispatchEvent(new CustomEvent('activity-changed'));
+          console.log('🔄 Retry succeeded and triggered refresh');
+          
+          // Close dialog on success
+          onOpenChange(false);
+          return; // Exit early if retry is successful
+        } catch (retryError) {
+          console.error(`Retry attempt failed:`, retryError);
+        }
       }
     }
   }

@@ -164,7 +164,15 @@ export function useActivities(props?: UseActivitiesProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       // Dispatch a custom event to notify components of the change
-      window.dispatchEvent(new CustomEvent('activity-changed'));
+      const timestamp = Date.now();
+      window.dispatchEvent(new CustomEvent('activity-changed', { 
+        detail: { 
+          operation: 'create', 
+          timestamp: timestamp,
+          isoTimestamp: new Date(timestamp).toISOString()
+        } 
+      }));
+      console.log(`🆕 Created activity at ${new Date(timestamp).toISOString()}, triggering UI refresh`);
       
       toast({
         title: "Success",
@@ -478,7 +486,15 @@ export function useActivities(props?: UseActivitiesProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       // Dispatch a custom event to notify components of the change
-      window.dispatchEvent(new CustomEvent('activity-changed'));
+      const timestamp = Date.now();
+      window.dispatchEvent(new CustomEvent('activity-changed', { 
+        detail: { 
+          operation: 'delete', 
+          timestamp: timestamp,
+          isoTimestamp: new Date(timestamp).toISOString()
+        } 
+      }));
+      console.log(`🗑️ Deleted activity at ${new Date(timestamp).toISOString()}, triggering UI refresh`);
       
       // Show success message
       toast({
