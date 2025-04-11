@@ -37,9 +37,17 @@ interface TimelineActivityRowProps {
   title: string;
   activities: Activity[];
   year: number;
+  onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
-export function TimelineActivityRow({ title, activities, year }: TimelineActivityRowProps) {
+export function TimelineActivityRow({ 
+  title, 
+  activities, 
+  year,
+  onActivityClick,
+  onActivityContextMenu
+}: TimelineActivityRowProps) {
   const periodStart = new Date(year, 0, 1);
   const periodEnd = new Date(year, 11, 31);
   
@@ -145,6 +153,8 @@ export function TimelineActivityRow({ title, activities, year }: TimelineActivit
               }}
               onMouseEnter={(e) => handleActivityMouseEnter(e, activity)}
               onMouseLeave={handleActivityMouseLeave}
+              onClick={() => onActivityClick && onActivityClick(activity)}
+              onContextMenu={(e) => onActivityContextMenu && onActivityContextMenu(e, activity)}
             >
               <motion.span 
                 className="truncate"
@@ -191,17 +201,65 @@ interface TimelineViewProps {
   activities: Activity[];
   holidays: Holiday[];
   year: number;
+  zoomLevel?: number;
+  highlightToday?: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onActivityClick?: (activity: Activity) => void;
+  onActivityContextMenu?: (event: React.MouseEvent, activity: Activity) => void;
 }
 
 export default function TimelineView({ 
   activities, 
   holidays, 
   year,
+  zoomLevel = 1,
+  highlightToday = false,
   onZoomIn,
-  onZoomOut
+  onZoomOut,
+  onActivityClick,
+  onActivityContextMenu
 }: TimelineViewProps) {
+  // Force render whenever activities change
+  const [forceRefresh, setForceRefresh] = useState<number>(Date.now());
+  const activitiesRef = useRef<Activity[]>([]);
+  
+  // When activities change, update our reference and force a refresh
+  useEffect(() => {
+    const currentIds = new Set(activities.map(a => a.id));
+    const prevIds = new Set(activitiesRef.current.map(a => a.id));
+    
+    // Check if the activities have been added or removed
+    const hasChanges = activities.length !== activitiesRef.current.length || 
+      activities.some(a => !prevIds.has(a.id)) ||
+      activitiesRef.current.some(a => !currentIds.has(a.id));
+    
+    if (hasChanges) {
+      console.log('🔄 Timeline view detected activity changes, refreshing view');
+      activitiesRef.current = [...activities];
+      setForceRefresh(Date.now());
+    }
+  }, [activities]);
+  
+  // Listen for manual refresh requests
+  useEffect(() => {
+    const handleActivityChanged = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const details = customEvent.detail || {};
+      const operation = details.operation || 'unknown';
+      console.log(`⚡ Timeline directly received ${operation} event, forcing refresh`);
+      
+      // Force a refresh of the component
+      setForceRefresh(Date.now());
+    };
+    
+    window.addEventListener('activity-changed', handleActivityChanged);
+    
+    return () => {
+      window.removeEventListener('activity-changed', handleActivityChanged);
+    };
+  }, []);
+  
   // Group activities by type for better organization
   const types = ['project', 'meeting', 'training', 'holiday'] as const;
   
