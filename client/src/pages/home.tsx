@@ -58,15 +58,18 @@ export default function Home() {
   
   // Listen for activity changes and force a refresh
   useEffect(() => {
-    // This will listen for our custom event that signals activity deletion
+    // This will listen for our custom event that signals activity deletion or update
     const handleActivityChanged = () => {
-      console.log('Activity changed detected, refreshing data...');
-      setRefreshToken(Date.now());
+      const timestamp = Date.now();
+      console.log(`📊 Activity changed detected at ${new Date().toISOString()}, refreshing data with token: ${timestamp}`);
+      setRefreshToken(timestamp);
     };
     
+    console.log('🔄 Setting up activity-changed event listener');
     window.addEventListener('activity-changed', handleActivityChanged);
     
     return () => {
+      console.log('🧹 Cleaning up activity-changed event listener');
       window.removeEventListener('activity-changed', handleActivityChanged);
     };
   }, []);

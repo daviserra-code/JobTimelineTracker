@@ -66,6 +66,9 @@ export default function DeleteActivityDialog({
         description: `"${activity.title}" has been successfully deleted.`,
       });
       
+      // Manually dispatch our custom event to ensure the UI refreshes
+      window.dispatchEvent(new CustomEvent('activity-changed'));
+      
       onOpenChange(false);
     } catch (error) {
       console.error("Error deleting activity:", error);
@@ -78,6 +81,10 @@ export default function DeleteActivityDialog({
         // Try deletion again but with a basic success message to avoid showing another error
         try {
           await deleteActivity(activity.id);
+          
+          // Manually dispatch our custom event to ensure the UI refreshes (for retry case)
+          window.dispatchEvent(new CustomEvent('activity-changed'));
+          
           onOpenChange(false);
           return;
         } catch (retryError) {
