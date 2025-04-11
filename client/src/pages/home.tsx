@@ -53,8 +53,26 @@ export default function Home() {
   const [highlightToday, setHighlightToday] = useState(false);
   
   // Get activities and holidays data with optional filtering
-  const { activities, isLoading: activitiesLoading } = useActivities(
-    activeFilters ? { filters: activeFilters } : undefined
+  // Include a timestamp to force refresh on mutations
+  const [refreshToken, setRefreshToken] = useState(Date.now());
+  
+  // Listen for activity changes and force a refresh
+  useEffect(() => {
+    // This will listen for our custom event that signals activity deletion
+    const handleActivityChanged = () => {
+      console.log('Activity changed detected, refreshing data...');
+      setRefreshToken(Date.now());
+    };
+    
+    window.addEventListener('activity-changed', handleActivityChanged);
+    
+    return () => {
+      window.removeEventListener('activity-changed', handleActivityChanged);
+    };
+  }, []);
+  
+  const { activities, isLoading: activitiesLoading, isAdmin } = useActivities(
+    activeFilters ? { filters: activeFilters, refreshToken } : { refreshToken }
   );
   const { holidays, isLoading: holidaysLoading } = useHolidays(["italy", "europe", "usa", "asia"], currentYear);
   

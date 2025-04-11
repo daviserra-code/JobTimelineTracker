@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 interface UseActivitiesProps {
   filters?: ActivityFilters;
+  refreshToken?: number; // Add refreshToken to force refresh
 }
 
 export function useActivities(props?: UseActivitiesProps) {
@@ -46,11 +47,17 @@ export function useActivities(props?: UseActivitiesProps) {
     return `?${params.toString()}`;
   }, [filters]);
   
+  // Get all activities with optional filtering, using refreshToken if provided
+  const refreshToken = props?.refreshToken;
+  
   // Get all activities with optional filtering
   const { data: activities, isLoading, error } = useQuery<Activity[]>({
-    queryKey: ['/api/activities', queryParams],
+    queryKey: ['/api/activities', queryParams, refreshToken], // Add refreshToken to the query key
     queryFn: async () => {
-      const response = await fetch(`/api/activities${queryParams}`);
+      // Add a timestamp to avoid browser caching
+      const timestamp = Date.now();
+      const separator = queryParams ? '&' : '?';
+      const response = await fetch(`/api/activities${queryParams}${separator}t=${timestamp}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch activities: ${response.statusText}`);
       }
@@ -155,6 +162,9 @@ export function useActivities(props?: UseActivitiesProps) {
       
       // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
+      // Dispatch a custom event to notify components of the change
+      window.dispatchEvent(new CustomEvent('activity-changed'));
       
       toast({
         title: "Success",
@@ -269,6 +279,9 @@ export function useActivities(props?: UseActivitiesProps) {
       
       // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
+      // Dispatch a custom event to notify components of the change
+      window.dispatchEvent(new CustomEvent('activity-changed'));
       
       toast({
         title: "Success",
@@ -464,6 +477,9 @@ export function useActivities(props?: UseActivitiesProps) {
       // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
+      // Dispatch a custom event to notify components of the change
+      window.dispatchEvent(new CustomEvent('activity-changed'));
+      
       // Show success message
       toast({
         title: "Success",
@@ -553,6 +569,9 @@ export function useActivities(props?: UseActivitiesProps) {
       
       // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
+      // Dispatch a custom event to notify components of the change
+      window.dispatchEvent(new CustomEvent('activity-changed'));
       
       toast({
         title: "Success",
