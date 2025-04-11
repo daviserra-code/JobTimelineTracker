@@ -141,8 +141,21 @@ export function useActivities(props?: UseActivitiesProps) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      // More aggressive invalidation to ensure all activities queries are refreshed
+      // regardless of their filter parameters
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+          return typeof queryKey === 'string' && queryKey.includes('/api/activities');
+        },
+      });
+      
+      // Force refetch to ensure we get the latest data
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      
+      // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
       toast({
         title: "Success",
         description: "Activity created successfully",
@@ -242,8 +255,21 @@ export function useActivities(props?: UseActivitiesProps) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      // More aggressive invalidation to ensure all activities queries are refreshed
+      // regardless of their filter parameters
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+          return typeof queryKey === 'string' && queryKey.includes('/api/activities');
+        },
+      });
+      
+      // Force refetch to ensure we get the latest data
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      
+      // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
       toast({
         title: "Success",
         description: "Activity updated successfully",
@@ -423,8 +449,22 @@ export function useActivities(props?: UseActivitiesProps) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      // More aggressive invalidation to ensure all activities queries are refreshed
+      // regardless of their filter parameters
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+          return typeof queryKey === 'string' && queryKey.includes('/api/activities');
+        },
+      });
+      
+      // Force refetch to ensure we get the latest data
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      
+      // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
+      // Show success message
       toast({
         title: "Success",
         description: "Activity deleted successfully",
@@ -499,8 +539,21 @@ export function useActivities(props?: UseActivitiesProps) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+      // More aggressive invalidation to ensure all activities queries are refreshed
+      // regardless of their filter parameters
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+          return typeof queryKey === 'string' && queryKey.includes('/api/activities');
+        },
+      });
+      
+      // Force refetch to ensure we get the latest data
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      
+      // Invalidate any other related queries
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      
       toast({
         title: "Success",
         description: "Activities imported successfully",
