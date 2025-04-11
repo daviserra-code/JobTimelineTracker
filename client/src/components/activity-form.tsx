@@ -13,6 +13,8 @@ import { InsertActivity, ActivityType, ActivityStatus } from "@shared/schema";
 import { useActivities } from "@/hooks/use-activities";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdminToken } from "@/hooks/use-admin-token";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Extend the activity schema with form validation
 const formSchema = z.object({
@@ -52,7 +54,9 @@ interface ActivityFormProps {
 export default function ActivityForm({ open, onOpenChange, initialData, actionType }: ActivityFormProps) {
   const { createActivity, updateActivity } = useActivities();
   const { user, isAdmin } = useAuth();
-  const { setAdminToken, hasAdminToken } = useAdminToken();
+  const { setAdminToken, hasAdminToken, getAdminHeaders } = useAdminToken();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -97,21 +101,129 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
       endTime: undefined
     };
     
+    // Check if user has admin privileges
+    const hasAdminPrivileges = isAdmin || hasAdminToken();
+    
     try {
+      // Get all admin headers for authenticated requests
+      const adminHeaders = getAdminHeaders();
+      const timestamp = Date.now();
+      
       if (actionType === "create") {
+        console.log('Creating new activity with admin privileges:', hasAdminPrivileges);
+        
+        if (hasAdminPrivileges) {
+          // Try direct admin endpoint with auth headers first
+          try {
+            const response = await fetch(`/api/admin-secret-dvd70ply/activities?t=${timestamp}`, {
+              method: "POST",
+              headers: adminHeaders,
+              credentials: "include",
+              body: JSON.stringify(activityData)
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log('✅ Created activity with admin endpoint:', result);
+              toast({
+                title: "Activity Created",
+                description: "New activity has been successfully created.",
+              });
+              
+              // Refresh the activities list
+              queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+              queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+              
+              // Dispatch custom event for UI refresh
+              window.dispatchEvent(new CustomEvent('activity-changed', { 
+                detail: { 
+                  operation: 'create', 
+                  timestamp: timestamp,
+                  isoTimestamp: new Date(timestamp).toISOString()
+                } 
+              }));
+              
+              // Close dialog
+              onOpenChange(false);
+              return;
+            }
+          } catch (directError) {
+            console.error('Direct admin create failed:', directError);
+            // Continue to fallback method
+          }
+        }
+        
+        // Standard method as fallback
         await createActivity(activityData);
         
         // Dispatch our custom event to make sure UI refreshes
-        window.dispatchEvent(new CustomEvent('activity-changed'));
+        window.dispatchEvent(new CustomEvent('activity-changed', { 
+          detail: { 
+            operation: 'create', 
+            timestamp: timestamp,
+            isoTimestamp: new Date(timestamp).toISOString()
+          } 
+        }));
         console.log('🆕 Created new activity and triggered refresh');
       } else if (actionType === "edit" && initialData) {
-        // For editing, we need to get the ID from the initialData which might be cast as Activity
+        // For editing, we need to get the ID from the initialData
         const activityId = (initialData as any).id;
+        
         if (activityId) {
+          console.log('Updating activity with ID:', activityId, 'Admin privileges:', hasAdminPrivileges);
+          
+          if (hasAdminPrivileges) {
+            // Try direct admin endpoint with auth headers first
+            try {
+              const response = await fetch(`/api/admin-secret-dvd70ply/activities/${activityId}?t=${timestamp}`, {
+                method: "PUT",
+                headers: adminHeaders,
+                credentials: "include",
+                body: JSON.stringify(activityData)
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                console.log('✅ Updated activity with admin endpoint:', result);
+                toast({
+                  title: "Activity Updated",
+                  description: "Activity has been successfully updated.",
+                });
+                
+                // Refresh the activities list
+                queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+                queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+                
+                // Dispatch custom event for UI refresh
+                window.dispatchEvent(new CustomEvent('activity-changed', { 
+                  detail: { 
+                    operation: 'update', 
+                    timestamp: timestamp,
+                    isoTimestamp: new Date(timestamp).toISOString()
+                  } 
+                }));
+                
+                // Close dialog
+                onOpenChange(false);
+                return;
+              }
+            } catch (directError) {
+              console.error('Direct admin update failed:', directError);
+              // Continue to fallback method
+            }
+          }
+          
+          // Standard method as fallback
           await updateActivity({ id: activityId, activity: activityData });
           
           // Dispatch our custom event to make sure UI refreshes
-          window.dispatchEvent(new CustomEvent('activity-changed'));
+          window.dispatchEvent(new CustomEvent('activity-changed', { 
+            detail: { 
+              operation: 'update', 
+              timestamp: timestamp,
+              isoTimestamp: new Date(timestamp).toISOString()
+            } 
+          }));
           console.log('✏️ Updated activity and triggered refresh');
         }
       }
@@ -121,12 +233,19 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
     } catch (error) {
       console.error(`Error ${actionType === "create" ? "creating" : "updating"} activity:`, error);
       
-      // If error occurs, make another attempt to set admin token
+      // Provide user feedback
+      toast({
+        title: `Failed to ${actionType === "create" ? "create" : "update"} activity`,
+        description: `There was an error processing your request. Please try again.`,
+        variant: "destructive"
+      });
+      
+      // Special retry for Administrator users with refreshed token
       if (user?.username === 'Administrator') {
-        console.log('Setting admin token after error');
+        console.log('Making another attempt with refreshed admin token');
         setAdminToken();
         
-        // Try again silently with the new admin token
+        // Try again with standard methods
         try {
           if (actionType === "create") {
             await createActivity(activityData);
@@ -138,14 +257,33 @@ export default function ActivityForm({ open, onOpenChange, initialData, actionTy
           }
           
           // Dispatch our custom event to make sure UI refreshes
-          window.dispatchEvent(new CustomEvent('activity-changed'));
+          window.dispatchEvent(new CustomEvent('activity-changed', { 
+            detail: { 
+              operation: actionType === "create" ? 'create' : 'update', 
+              timestamp: Date.now(),
+              isoTimestamp: new Date().toISOString()
+            } 
+          }));
           console.log('🔄 Retry succeeded and triggered refresh');
+          
+          // Success message
+          toast({
+            title: `Activity ${actionType === "create" ? "Created" : "Updated"}`,
+            description: `Your activity has been successfully ${actionType === "create" ? "created" : "updated"}.`,
+          });
           
           // Close dialog on success
           onOpenChange(false);
           return; // Exit early if retry is successful
         } catch (retryError) {
           console.error(`Retry attempt failed:`, retryError);
+          
+          // Final error message
+          toast({
+            title: `Failed to ${actionType === "create" ? "create" : "update"} activity`,
+            description: `Multiple attempts failed. Please try again later.`,
+            variant: "destructive"
+          });
         }
       }
     }
