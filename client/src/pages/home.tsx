@@ -3,6 +3,9 @@ import { ViewMode, Activity, InsertActivity } from "@shared/schema";
 import { useMobile } from "@/hooks/use-mobile";
 import { useActivities } from "@/hooks/use-activities";
 import { useHolidays } from "@/hooks/use-holidays";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdminToken } from "@/hooks/use-admin-token";
+import { useToast } from "@/hooks/use-toast";
 import { YEARS } from "@/lib/constants";
 import { getISOWeekNumber } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
@@ -24,6 +27,9 @@ import { useLocation } from "wouter";
 export default function Home() {
   const isMobile = useMobile();
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { hasAdminToken } = useAdminToken();
+  const { toast } = useToast();
   
   // Get today's date information for initial state
   const today = new Date();
