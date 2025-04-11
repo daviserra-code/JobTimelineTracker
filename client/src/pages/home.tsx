@@ -261,16 +261,32 @@ export default function Home() {
   };
   
   const handleActivityClick = (activity: Activity) => {
-    // Skip handling for holiday activities which are not editable
-    if (activity.type === "holiday") return;
+    // For holiday activities, only admins can edit
+    const isAdmin = user?.role === 'admin' || user?.username === 'Administrator' || hasAdminToken();
+    if (activity.type === "holiday" && !isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "Only administrators can edit holiday activities.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setSelectedActivity(activity);
     setIsEditActivityOpen(true);
   };
 
   const handleActivityContextMenu = (event: React.MouseEvent, activity: Activity) => {
-    // Skip handling for holiday activities which are not editable
-    if (activity.type === "holiday") return;
+    // For holiday activities, only admins can delete
+    const isAdmin = user?.role === 'admin' || user?.username === 'Administrator' || hasAdminToken();
+    if (activity.type === "holiday" && !isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "Only administrators can delete holiday activities.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Prevent the default context menu
     event.preventDefault();
