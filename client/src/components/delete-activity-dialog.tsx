@@ -14,7 +14,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAdminToken } from "@/hooks/use-admin-token";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { forceRefreshCycle } from "@/lib/refresh-utils";
+import { forceRefreshCycle, removeDeletedActivityFromCache } from "@/lib/refresh-utils";
+import { queryClient } from "@/lib/queryClient";
 
 interface DeleteActivityDialogProps {
   activity: Activity | null;
@@ -59,6 +60,10 @@ export default function DeleteActivityDialog({
     }
     
     try {
+      // IMPORTANT: Pre-emptively remove from cache before the API call
+      // This ensures the UI updates immediately even if there are network delays
+      removeDeletedActivityFromCache(activity.id);
+      
       // Proceed with deletion if admin
       await deleteActivity(activity.id);
       
@@ -67,9 +72,25 @@ export default function DeleteActivityDialog({
         description: `"${activity.title}" has been successfully deleted.`,
       });
       
-      // Use the new refresh utility to ensure UI updates properly
+      // Multi-stage refresh process:
+      // 1. Remove from cache again to be safe
+      removeDeletedActivityFromCache(activity.id);
+      
+      // 2. Force invalidation of all activities queries
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+          return typeof queryKey === 'string' && queryKey.includes('/api/activities');
+        },
+      });
+      
+      // 3. Force refetch of all activities queries
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      
+      // 4. Use the refresh utility to trigger event-based refreshes
       forceRefreshCycle('delete', activity.id, 300);
       
+      // Close the dialog
       onOpenChange(false);
     } catch (error) {
       console.error("Error deleting activity:", error);
@@ -81,15 +102,26 @@ export default function DeleteActivityDialog({
         
         // Try deletion again but with a basic success message to avoid showing another error
         try {
+          // Pre-emptively remove from cache
+          removeDeletedActivityFromCache(activity.id);
+          
+          // Attempt deletion again
           await deleteActivity(activity.id);
           
-          // Use the new refresh utility for the retry case with a more aggressive refresh cycle
+          // Extra aggressive refresh cycle with multiple strategies
+          removeDeletedActivityFromCache(activity.id);
+          queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+          queryClient.refetchQueries({ queryKey: ['/api/activities'] });
           forceRefreshCycle('delete-retry', activity.id, 250);
           
+          // Close dialog
           onOpenChange(false);
           return;
         } catch (retryError) {
           console.error("Second delete attempt failed:", retryError);
+          
+          // As a last resort, remove from cache anyway since the UI refresh is critical
+          removeDeletedActivityFromCache(activity.id);
         }
       }
       

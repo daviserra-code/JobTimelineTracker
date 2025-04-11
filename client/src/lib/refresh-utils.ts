@@ -2,6 +2,7 @@
  * Helper utilities for handling UI refresh cycles, particularly for operations like delete
  * that may require multiple refresh events to ensure UI state is correctly updated
  */
+import { queryClient } from "@/lib/queryClient";
 
 /**
  * Dispatches an activity-changed event with detailed information about the operation
@@ -31,8 +32,40 @@ export function dispatchActivityChangedEvent(
 }
 
 /**
- * Forces a refresh cycle with an optional second refresh after a delay
- * to ensure changes are reflected in the UI
+ * Forces a direct cache update to remove a deleted activity
+ * This is a last resort method to ensure deleted activities don't show in the UI
+ * 
+ * @param activityId The ID of the activity to remove from the cache
+ */
+export function removeDeletedActivityFromCache(activityId: number): void {
+  // Get all activity query keys that might be caching data
+  const queryKeys = queryClient.getQueryCache().getAll()
+    .filter(query => {
+      const key = query.queryKey;
+      const firstSegment = Array.isArray(key) ? key[0] : key;
+      return typeof firstSegment === 'string' && firstSegment.includes('/api/activities');
+    })
+    .map(query => query.queryKey);
+  
+  // For each key, update the cache data directly
+  queryKeys.forEach(queryKey => {
+    const currentData = queryClient.getQueryData<any[]>(queryKey);
+    if (Array.isArray(currentData) && currentData.length > 0) {
+      // Check if it's an array of activities with an id property
+      if (currentData[0] && typeof currentData[0].id === 'number') {
+        // Filter out the deleted activity
+        const newData = currentData.filter(item => item.id !== activityId);
+        if (newData.length !== currentData.length) {
+          console.log(`🔥 Manually removing activity ID ${activityId} from cache (${queryKey})`);
+          queryClient.setQueryData(queryKey, newData);
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Forces a refresh cycle with multiple refresh events to ensure UI state is correctly updated
  * 
  * @param operation The operation that triggered the refresh
  * @param activityId The ID of the affected activity
@@ -46,12 +79,38 @@ export function forceRefreshCycle(
   // First immediate refresh
   dispatchActivityChangedEvent(operation, activityId);
   
-  // Second delayed refresh to ensure changes are reflected
+  // If this is a delete operation, force cache update
+  if (operation.includes('delete')) {
+    // Direct cache manipulation
+    removeDeletedActivityFromCache(activityId);
+    
+    // Force activity-specific invalidation
+    queryClient.invalidateQueries({ 
+      predicate: (query) => {
+        const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+        return typeof queryKey === 'string' && queryKey.includes('/api/activities');
+      }
+    });
+    
+    // Log notification for developer
+    console.log(`🗑️ Deleted activity at ${new Date().toISOString()}, triggering UI refresh`);
+  }
+  
+  // Secondary refresh after a short delay
   setTimeout(() => {
     dispatchActivityChangedEvent(`${operation}-confirmation`, activityId, {
       isSecondaryRefresh: true,
       delayMs: delay
     });
+    
+    // Force a more aggressive data refresh
+    console.log(`🔄 Forcing data refresh at ${new Date().toISOString()}`);
+    queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+    
+    // For delete operations, do a second direct cache manipulation
+    if (operation.includes('delete')) {
+      removeDeletedActivityFromCache(activityId);
+    }
   }, delay);
   
   // Third refresh as a final safeguard
@@ -60,5 +119,17 @@ export function forceRefreshCycle(
       isSecondaryRefresh: true,
       delayMs: delay * 2
     });
+    
+    // Force a secondary refresh cycle
+    setTimeout(() => {
+      console.log(`🔁 Secondary refresh at ${new Date().toISOString()}`);
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+    }, 50);
+    
+    // With an additional tertiary refresh for good measure
+    setTimeout(() => {
+      console.log(`🔁 Secondary refresh at ${new Date().toISOString()}`);
+      queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+    }, 500);
   }, delay * 2);
 }
