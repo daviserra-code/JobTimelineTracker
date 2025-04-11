@@ -58,11 +58,28 @@ export default function Home() {
   
   // Listen for activity changes and force a refresh
   useEffect(() => {
-    // This will listen for our custom event that signals activity deletion or update
-    const handleActivityChanged = () => {
+    // This will listen for our custom event that signals activity changes
+    const handleActivityChanged = (event: Event) => {
       const timestamp = Date.now();
-      console.log(`📊 Activity changed detected at ${new Date().toISOString()}, refreshing data with token: ${timestamp}`);
+      
+      // Get details from the custom event if available
+      const customEvent = event as CustomEvent;
+      const details = customEvent.detail || {};
+      const operation = details.operation || 'unknown';
+      const eventTimestamp = details.timestamp || timestamp;
+      const isoTimestamp = details.isoTimestamp || new Date(timestamp).toISOString();
+      
+      console.log(`📊 Activity ${operation} detected at ${isoTimestamp}, refreshing data with token: ${timestamp}`);
+      
+      // Update the refresh token to force data reload
       setRefreshToken(timestamp);
+      
+      // Also force a URL parameter update if needed
+      const currentView = viewMode;
+      if (currentView) {
+        // For debugging: Uncomment to track full URL changes
+        // console.log(`Updating URL parameters for view mode ${currentView} after ${operation}`);
+      }
     };
     
     console.log('🔄 Setting up activity-changed event listener');
@@ -72,7 +89,7 @@ export default function Home() {
       console.log('🧹 Cleaning up activity-changed event listener');
       window.removeEventListener('activity-changed', handleActivityChanged);
     };
-  }, []);
+  }, [viewMode]);
   
   const { activities, isLoading: activitiesLoading, isAdmin } = useActivities(
     activeFilters ? { filters: activeFilters, refreshToken } : { refreshToken }

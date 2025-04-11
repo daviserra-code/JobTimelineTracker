@@ -289,7 +289,15 @@ export function useActivities(props?: UseActivitiesProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       // Dispatch a custom event to notify components of the change
-      window.dispatchEvent(new CustomEvent('activity-changed'));
+      const timestamp = Date.now();
+      window.dispatchEvent(new CustomEvent('activity-changed', { 
+        detail: { 
+          operation: 'update', 
+          timestamp: timestamp,
+          isoTimestamp: new Date(timestamp).toISOString()
+        } 
+      }));
+      console.log(`✏️ Updated activity at ${new Date(timestamp).toISOString()}, triggering UI refresh`);
       
       toast({
         title: "Success",
@@ -587,7 +595,15 @@ export function useActivities(props?: UseActivitiesProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       // Dispatch a custom event to notify components of the change
-      window.dispatchEvent(new CustomEvent('activity-changed'));
+      const timestamp = Date.now();
+      window.dispatchEvent(new CustomEvent('activity-changed', { 
+        detail: { 
+          operation: 'import', 
+          timestamp: timestamp,
+          isoTimestamp: new Date(timestamp).toISOString()
+        } 
+      }));
+      console.log(`📥 Imported activities at ${new Date(timestamp).toISOString()}, triggering UI refresh`);
       
       toast({
         title: "Success",
