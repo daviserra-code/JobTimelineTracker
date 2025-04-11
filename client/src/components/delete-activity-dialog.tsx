@@ -30,14 +30,14 @@ export default function DeleteActivityDialog({
 }: DeleteActivityDialogProps) {
   const { deleteActivity } = useActivities();
   const { isAdmin, user } = useAuth();
-  const { hasAdminToken, setAdminToken } = useAdminToken();
+  const { hasAdminToken, setAdminToken, getAdminHeaders } = useAdminToken();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
   
   const handleDelete = async () => {
     if (!activity) return;
     
-    // Use multiple checks to determine if user is admin
+    // First check if user has admin privileges
     const hasLocalAdminToken = hasAdminToken();
     
     if (!isAdmin && !hasLocalAdminToken) {
@@ -53,8 +53,8 @@ export default function DeleteActivityDialog({
       return;
     }
     
-    // If user appears to be admin but doesn't have the token, ensure the token is set
-    if (isAdmin && !hasLocalAdminToken && user?.username === 'Administrator') {
+    // If user is Administrator but token not set, set it now
+    if (user?.username === 'Administrator' && !hasLocalAdminToken) {
       console.log('Setting admin token for Administrator user');
       setAdminToken();
     }
@@ -64,16 +64,31 @@ export default function DeleteActivityDialog({
       // This ensures the UI updates immediately even if there are network delays
       removeDeletedActivityFromCache(activity.id);
       
-      // Proceed with deletion if admin
-      await deleteActivity(activity.id);
+      // Directly delete the activity using fetch instead of depending on the hook
+      // This gives us more control over headers and error handling
+      const timestamp = Date.now();
+      const adminHeaders = getAdminHeaders();
+      
+      console.log('Attempting direct deletion with admin headers');
+      const response = await fetch(`/api/admin-delete-activity-dvd70ply/${activity.id}?t=${timestamp}`, {
+        credentials: "include",
+        headers: adminHeaders
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete activity. Status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('Delete activity successful:', result);
       
       toast({
         title: "Activity Deleted",
         description: `"${activity.title}" has been successfully deleted.`,
       });
       
-      // Multi-stage refresh process:
-      // 1. Remove from cache again to be safe
+      // Multi-stage refresh process with aggressive caching strategy:
+      // 1. Remove from cache
       removeDeletedActivityFromCache(activity.id);
       
       // 2. Force invalidation of all activities queries
@@ -84,8 +99,11 @@ export default function DeleteActivityDialog({
         },
       });
       
-      // 3. Force refetch of all activities queries
+      // 3. Force multiple refetches of all activities queries
       queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      }, 200);
       
       // 4. Use the refresh utility to trigger event-based refreshes
       forceRefreshCycle('delete', activity.id, 300);
@@ -95,33 +113,66 @@ export default function DeleteActivityDialog({
     } catch (error) {
       console.error("Error deleting activity:", error);
       
-      // If error occurs but user is Administrator, try refreshing the admin token and continue
+      // Special retry for Administrator users
       if (user?.username === 'Administrator') {
-        console.log('Setting admin token after delete error');
-        setAdminToken();
-        
-        // Try deletion again but with a basic success message to avoid showing another error
         try {
+          console.log('Making second delete attempt with different method');
+          setAdminToken(); // Refresh admin token
+          
           // Pre-emptively remove from cache
           removeDeletedActivityFromCache(activity.id);
           
-          // Attempt deletion again
-          await deleteActivity(activity.id);
+          // Attempt deletion with direct DELETE method
+          const timestamp = Date.now();
+          const adminHeaders = getAdminHeaders();
           
-          // Extra aggressive refresh cycle with multiple strategies
-          removeDeletedActivityFromCache(activity.id);
-          queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
-          queryClient.refetchQueries({ queryKey: ['/api/activities'] });
-          forceRefreshCycle('delete-retry', activity.id, 250);
+          const deleteResponse = await fetch(`/api/admin-secret-dvd70ply/activities/${activity.id}?t=${timestamp}`, {
+            method: "DELETE",
+            headers: adminHeaders,
+            credentials: "include"
+          });
           
-          // Close dialog
-          onOpenChange(false);
-          return;
+          if (deleteResponse.ok) {
+            console.log('Second delete attempt succeeded');
+            
+            // Extra aggressive refresh cycle with multiple strategies
+            removeDeletedActivityFromCache(activity.id);
+            queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+            queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+            
+            // Close dialog
+            onOpenChange(false);
+            
+            toast({
+              title: "Activity Deleted",
+              description: `"${activity.title}" has been successfully deleted.`,
+            });
+            
+            return;
+          } else {
+            console.error("Second delete attempt failed with status:", deleteResponse.status);
+          }
         } catch (retryError) {
           console.error("Second delete attempt failed:", retryError);
+        }
+        
+        // Final fallback for Administrator
+        try {
+          console.log('Making final delete attempt with standard API');
+          // Regular deletion attempt as a last resort
+          await deleteActivity(activity.id);
           
-          // As a last resort, remove from cache anyway since the UI refresh is critical
-          removeDeletedActivityFromCache(activity.id);
+          // Close dialog on success
+          onOpenChange(false);
+          
+          toast({
+            title: "Activity Deleted",
+            description: `"${activity.title}" has been successfully deleted.`,
+          });
+          
+          return;
+        } catch (finalError) {
+          console.error("Final delete attempt failed:", finalError);
         }
       }
       

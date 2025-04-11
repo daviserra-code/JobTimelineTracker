@@ -62,6 +62,18 @@ export function useAdminToken() {
       return null;
     }
   };
+  
+  // Get all admin headers for authenticated requests
+  const getAdminHeaders = () => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "X-Admin-Key": "dvd70ply",
+      "Authorization": "Bearer dvd70ply",
+      "X-Admin-Token": ADMIN_TOKEN_VALUE,
+      "X-Admin-Auth": "true"
+    };
+    return headers;
+  };
 
   return {
     setAdminToken,
@@ -69,5 +81,6 @@ export function useAdminToken() {
     hasAdminToken,
     getAdminToken,
     getAdminUsername,
+    getAdminHeaders,
   };
 }
