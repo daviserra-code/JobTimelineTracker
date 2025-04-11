@@ -66,8 +66,33 @@ export default function DeleteActivityDialog({
         description: `"${activity.title}" has been successfully deleted.`,
       });
       
-      // Manually dispatch our custom event to ensure the UI refreshes
-      window.dispatchEvent(new CustomEvent('activity-changed'));
+      // Manually dispatch our custom event with detailed information to ensure the UI refreshes
+      const timestamp = Date.now();
+      const isoTimestamp = new Date(timestamp).toISOString();
+      
+      window.dispatchEvent(new CustomEvent('activity-changed', {
+        detail: {
+          operation: 'delete',
+          activityId: activity.id,
+          timestamp: timestamp,
+          isoTimestamp: isoTimestamp
+        }
+      }));
+      
+      // Dispatch a second event after a short delay to ensure components pick up the change
+      setTimeout(() => {
+        const secondTimestamp = Date.now();
+        console.log(`🔄 Sending second refresh event at ${new Date(secondTimestamp).toISOString()}`);
+        
+        window.dispatchEvent(new CustomEvent('activity-changed', {
+          detail: {
+            operation: 'delete-confirmation',
+            activityId: activity.id,
+            timestamp: secondTimestamp,
+            isoTimestamp: new Date(secondTimestamp).toISOString()
+          }
+        }));
+      }, 300);
       
       onOpenChange(false);
     } catch (error) {
@@ -82,8 +107,34 @@ export default function DeleteActivityDialog({
         try {
           await deleteActivity(activity.id);
           
-          // Manually dispatch our custom event to ensure the UI refreshes (for retry case)
-          window.dispatchEvent(new CustomEvent('activity-changed'));
+          // Manually dispatch our custom event with detailed information to ensure the UI refreshes (for retry case)
+          const retryTimestamp = Date.now();
+          const retryIsoTimestamp = new Date(retryTimestamp).toISOString();
+          console.log(`🔄 Sending delete retry event at ${retryIsoTimestamp}`);
+          
+          window.dispatchEvent(new CustomEvent('activity-changed', {
+            detail: {
+              operation: 'delete-retry',
+              activityId: activity.id,
+              timestamp: retryTimestamp,
+              isoTimestamp: retryIsoTimestamp
+            }
+          }));
+          
+          // Dispatch a second event after a short delay for retry case
+          setTimeout(() => {
+            const secondRetryTimestamp = Date.now();
+            console.log(`🔄 Sending second retry refresh event at ${new Date(secondRetryTimestamp).toISOString()}`);
+            
+            window.dispatchEvent(new CustomEvent('activity-changed', {
+              detail: {
+                operation: 'delete-retry-confirmation',
+                activityId: activity.id,
+                timestamp: secondRetryTimestamp,
+                isoTimestamp: new Date(secondRetryTimestamp).toISOString()
+              }
+            }));
+          }, 300);
           
           onOpenChange(false);
           return;
