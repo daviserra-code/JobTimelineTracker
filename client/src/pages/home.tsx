@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ViewMode, Activity, InsertActivity } from "@shared/schema";
 import { useMobile } from "@/hooks/use-mobile";
 import { useActivities } from "@/hooks/use-activities";
@@ -56,6 +56,20 @@ export default function Home() {
   // Include a timestamp to force refresh on mutations
   const [refreshToken, setRefreshToken] = useState(Date.now());
   
+  // Forced reload function that can be called from anywhere
+  const forceRefresh = useCallback(() => {
+    const timestamp = Date.now();
+    console.log(`🔄 Forcing data refresh at ${new Date(timestamp).toISOString()}`);
+    setRefreshToken(timestamp);
+    
+    // Add a small delay and refresh again to ensure changes are reflected
+    setTimeout(() => {
+      const secondTimestamp = Date.now();
+      console.log(`🔁 Secondary refresh at ${new Date(secondTimestamp).toISOString()}`);
+      setRefreshToken(secondTimestamp);
+    }, 500);
+  }, []);
+  
   // Listen for activity changes and force a refresh
   useEffect(() => {
     // This will listen for our custom event that signals activity changes
@@ -74,11 +88,9 @@ export default function Home() {
       // Update the refresh token to force data reload
       setRefreshToken(timestamp);
       
-      // Also force a URL parameter update if needed
-      const currentView = viewMode;
-      if (currentView) {
-        // For debugging: Uncomment to track full URL changes
-        // console.log(`Updating URL parameters for view mode ${currentView} after ${operation}`);
+      // For delete operations, do a double refresh with a delay
+      if (operation === 'delete') {
+        setTimeout(() => forceRefresh(), 300);
       }
     };
     
@@ -89,7 +101,7 @@ export default function Home() {
       console.log('🧹 Cleaning up activity-changed event listener');
       window.removeEventListener('activity-changed', handleActivityChanged);
     };
-  }, [viewMode]);
+  }, [viewMode, forceRefresh]);
   
   const { activities, isLoading: activitiesLoading, isAdmin } = useActivities(
     activeFilters ? { filters: activeFilters, refreshToken } : { refreshToken }

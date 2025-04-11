@@ -345,17 +345,26 @@ export default function TimelineView({
             {types.map(type => 
               groupedActivities[type]?.length > 0 && (
                 <TimelineActivityRow 
-                  key={type}
+                  key={`${type}-${forceRefresh}`}
                   title={typeLabels[type]} 
                   activities={groupedActivities[type]} 
-                  year={year} 
+                  year={year}
+                  onActivityClick={onActivityClick}
+                  onActivityContextMenu={onActivityContextMenu}
                 />
               )
             )}
             
             {/* Render other activities that don't match predefined types */}
             {otherActivities.length > 0 && (
-              <TimelineActivityRow title={typeLabels.other} activities={otherActivities} year={year} />
+              <TimelineActivityRow 
+                key={`other-${forceRefresh}`}
+                title={typeLabels.other} 
+                activities={otherActivities} 
+                year={year}
+                onActivityClick={onActivityClick}
+                onActivityContextMenu={onActivityContextMenu}
+              />
             )}
             
             {/* If there are no activities, show empty state */}
