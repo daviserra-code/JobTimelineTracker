@@ -956,14 +956,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user-preferences/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      const preferences = await storage.getUserPreferences(userId);
+      let preferences = await storage.getUserPreferences(userId);
       
+      // If preferences don't exist, create default preferences
       if (!preferences) {
-        return res.status(404).json({ message: "User preferences not found" });
+        const defaultPreferences: InsertUserPreference = {
+          userId,
+          defaultViewMode: "timeline",
+          defaultRegions: ["italy"],
+          notificationsEnabled: true,
+          notificationLeadTime: 3,
+          notificationMethods: ["app"],
+          theme: "light",
+          customSettings: {
+            showWeekends: true,
+            defaultWorkingHours: { start: "09:00", end: "17:00" }
+          }
+        };
+        
+        console.log(`Creating default preferences for user ${userId}`);
+        preferences = await storage.createUserPreferences(defaultPreferences);
       }
       
       res.json(preferences);
     } catch (error) {
+      console.error('Error in GET /api/user-preferences/:userId:', error);
       res.status(500).json({ message: `Error fetching user preferences: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
   });
