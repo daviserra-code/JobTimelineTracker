@@ -99,8 +99,21 @@ class EmailNotificationProvider implements NotificationProvider {
   }
 }
 
-// SMS notifications via Twilio (placeholder for future implementation)
+// SMS notifications via Twilio
 class SmsNotificationProvider implements NotificationProvider {
+  private twilioClient: any;
+
+  constructor() {
+    // Initialize Twilio client if credentials are available
+    if (this.canSend()) {
+      const twilioModule = require('twilio');
+      this.twilioClient = new twilioModule(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_AUTH_TOKEN
+      );
+    }
+  }
+
   canSend(): boolean {
     return !!(
       process.env.TWILIO_ACCOUNT_SID && 
@@ -110,7 +123,7 @@ class SmsNotificationProvider implements NotificationProvider {
   }
 
   async send(notification: Notification, activity: Activity, user: User, preferences: UserPreference): Promise<boolean> {
-    if (!this.canSend()) {
+    if (!this.canSend() || !this.twilioClient) {
       // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
         read: true
@@ -128,18 +141,24 @@ class SmsNotificationProvider implements NotificationProvider {
       return false;
     }
 
-    // This is just a placeholder - we'll implement actual Twilio integration when credentials are available
     try {
-      // In a real implementation, we would use Twilio client here
-      const message = `Reminder: ${activity.title} at ${activity.startDate.toLocaleString()}`;
-      console.log(`Would send SMS to ${preferences.phone}: ${message}`);
+      const message = `Activity Calendar: ${activity.title} at ${new Date(activity.startDate).toLocaleString()}`;
       
-      // Since this is a placeholder and we can't update status (field doesn't exist),
-      // we'll just mark it as read to prevent further attempts
+      // Send SMS via Twilio
+      const result = await this.twilioClient.messages.create({
+        body: message,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: preferences.phone
+      });
+      
+      console.log(`SMS sent to ${preferences.phone}: ${message}, Twilio SID: ${result.sid}`);
+      
+      // Mark notification as read
       await storage.updateNotification(notification.id, {
         read: true
       });
-      return false;
+      
+      return true;
     } catch (error) {
       console.error('Error sending SMS notification:', error);
       // Mark as read to prevent further attempts
