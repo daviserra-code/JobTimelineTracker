@@ -188,7 +188,7 @@ class NotificationService {
       .map(([method]) => method);
   }
 
-  // Send a notification through the specified method
+  // Send a notification through all enabled methods
   async sendNotification(notification: Notification): Promise<boolean> {
     try {
       if (!notification.activityId || !notification.userId) {
@@ -214,30 +214,52 @@ class NotificationService {
         return false;
       }
 
-      // Since we don't store method in the database, we'll use 'app' as default
-      const method = 'app' as NotificationMethod;
-      const provider = this.providers.get(method);
+      // Get enabled notification methods from user preferences
+      const enabledMethods = preferences.notificationMethods || ['app'];
+      let overallSuccess = false;
       
-      if (!provider) {
-        // Mark as read to prevent further attempts
-        await storage.updateNotification(notification.id, {
-          read: true
-        });
-        console.error(`Unsupported notification method: ${method}`);
-        return false;
+      // Send notification through each enabled method
+      for (const method of enabledMethods as NotificationMethod[]) {
+        const provider = this.providers.get(method);
+        
+        if (!provider || !provider.canSend()) {
+          console.log(`Skipping ${method} notification - provider not available`);
+          continue;
+        }
+        
+        try {
+          // For email notifications, check if email is provided
+          if (method === 'email' && !preferences.email) {
+            console.log(`Skipping email notification - no email address provided`);
+            continue;
+          }
+          
+          // For SMS notifications, check if phone number is provided
+          if (method === 'sms' && !preferences.phone) {
+            console.log(`Skipping SMS notification - no phone number provided`);
+            continue;
+          }
+          
+          console.log(`Sending ${method} notification for activity "${activity.title}"`);
+          const success = await provider.send(notification, activity, user, preferences);
+          
+          if (success) {
+            console.log(`Successfully sent ${method} notification`);
+            overallSuccess = true;
+          } else {
+            console.error(`Failed to send ${method} notification`);
+          }
+        } catch (error) {
+          console.error(`Error sending ${method} notification:`, error);
+        }
       }
-
-      // Send the notification
-      const success = await provider.send(notification, activity, user, preferences);
       
-      // If successful, mark notification as read
-      if (success) {
-        await storage.updateNotification(notification.id, {
-          read: true
-        });
-      }
+      // Mark notification as read regardless of success to prevent further attempts
+      await storage.updateNotification(notification.id, {
+        read: true
+      });
       
-      return success;
+      return overallSuccess;
     } catch (error) {
       console.error('Error in notification service:', error);
       // Mark as read to prevent further attempts

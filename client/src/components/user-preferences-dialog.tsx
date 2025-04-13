@@ -286,6 +286,130 @@ export default function UserPreferencesDialog({ open, onOpenChange }: UserPrefer
                   onValueChange={(value) => setNotificationLeadTime(value[0])}
                 />
               </div>
+              
+              <Separator className="my-4" />
+              
+              <div className="space-y-3">
+                <Label>Notification Methods</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="method-app" 
+                      checked={preferences.notificationMethods?.includes('app')}
+                      onCheckedChange={(checked) => {
+                        const methods = [...(preferences.notificationMethods || [])];
+                        if (checked && !methods.includes('app')) {
+                          methods.push('app');
+                        } else if (!checked) {
+                          const index = methods.indexOf('app');
+                          if (index > -1) methods.splice(index, 1);
+                        }
+                        if (methods.length === 0) {
+                          methods.push('app'); // Always keep at least one method
+                        }
+                        setCustomSettings({ notificationMethods: methods });
+                      }}
+                      disabled={!preferences.notificationsEnabled}
+                    />
+                    <Label htmlFor="method-app" className={!preferences.notificationsEnabled ? "text-muted-foreground" : ""}>
+                      App Notifications
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="method-email" 
+                      checked={preferences.notificationMethods?.includes('email')}
+                      onCheckedChange={(checked) => {
+                        const methods = [...(preferences.notificationMethods || [])];
+                        if (checked && !methods.includes('email')) {
+                          methods.push('email');
+                        } else if (!checked) {
+                          const index = methods.indexOf('email');
+                          if (index > -1) methods.splice(index, 1);
+                        }
+                        if (methods.length === 0) {
+                          methods.push('app'); // Always keep at least one method
+                        }
+                        setCustomSettings({ notificationMethods: methods });
+                      }}
+                      disabled={!preferences.notificationsEnabled}
+                    />
+                    <Label htmlFor="method-email" className={!preferences.notificationsEnabled ? "text-muted-foreground" : ""}>
+                      Email Notifications
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="method-sms" 
+                      checked={preferences.notificationMethods?.includes('sms')}
+                      onCheckedChange={(checked) => {
+                        const methods = [...(preferences.notificationMethods || [])];
+                        if (checked && !methods.includes('sms')) {
+                          methods.push('sms');
+                        } else if (!checked) {
+                          const index = methods.indexOf('sms');
+                          if (index > -1) methods.splice(index, 1);
+                        }
+                        if (methods.length === 0) {
+                          methods.push('app'); // Always keep at least one method
+                        }
+                        setCustomSettings({ notificationMethods: methods });
+                      }}
+                      disabled={!preferences.notificationsEnabled}
+                    />
+                    <Label htmlFor="method-sms" className={!preferences.notificationsEnabled ? "text-muted-foreground" : ""}>
+                      SMS Notifications
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+              
+              <div className="space-y-3">
+                <Label>Contact Information</Label>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email" className="text-sm">Email Address</Label>
+                  <input
+                    id="contact-email"
+                    type="email"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="your.email@example.com"
+                    value={preferences.email || ''}
+                    onChange={(e) => setCustomSettings({ email: e.target.value })}
+                    disabled={!preferences.notificationsEnabled || !preferences.notificationMethods?.includes('email')}
+                  />
+                  {preferences.notificationMethods?.includes('email') && !preferences.email && (
+                    <p className="text-xs text-orange-500">
+                      Please add your email address to receive email notifications
+                    </p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contact-phone" className="text-sm">Phone Number</Label>
+                  <input
+                    id="contact-phone"
+                    type="tel"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="+1234567890"
+                    value={preferences.phone || ''}
+                    onChange={(e) => setCustomSettings({ phone: e.target.value })}
+                    disabled={!preferences.notificationsEnabled || !preferences.notificationMethods?.includes('sms')}
+                  />
+                  {preferences.notificationMethods?.includes('sms') && !preferences.phone && (
+                    <p className="text-xs text-orange-500">
+                      Please add your phone number to receive SMS notifications
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Enter with country code (e.g., +1 for US, +39 for Italy)
+                  </p>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
