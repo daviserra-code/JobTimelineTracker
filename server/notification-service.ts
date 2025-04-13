@@ -35,22 +35,14 @@ class AppNotificationProvider implements NotificationProvider {
   }
 }
 
-// Email notifications via SendGrid
+// Email notifications (simulation mode) 
 class EmailNotificationProvider implements NotificationProvider {
   canSend(): boolean {
-    return !!process.env.SENDGRID_API_KEY;
+    // Always available in simulation mode
+    return true;
   }
 
   async send(notification: Notification, activity: Activity, user: User, preferences: UserPreference): Promise<boolean> {
-    if (!this.canSend()) {
-      // Mark as read to prevent further attempts
-      await storage.updateNotification(notification.id, {
-        read: true
-      });
-      console.error('SendGrid API key not configured');
-      return false;
-    }
-
     if (!preferences.email) {
       // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
@@ -61,10 +53,6 @@ class EmailNotificationProvider implements NotificationProvider {
     }
 
     try {
-      // Import SendGrid module
-      const sgMail = require('@sendgrid/mail');
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-      
       // Format dates nicely
       const startDate = new Date(activity.startDate).toLocaleString('en-US', {
         weekday: 'long',
@@ -75,10 +63,10 @@ class EmailNotificationProvider implements NotificationProvider {
         minute: '2-digit'
       });
       
-      // Construct email content
+      // Construct email content (this would be sent via SendGrid in production)
       const message = {
         to: preferences.email,
-        from: process.env.SENDGRID_FROM_EMAIL || 'calendar@example.com', // Use verified sender
+        from: 'calendar@example.com', 
         subject: `Reminder: ${activity.title}`,
         text: `Reminder for your activity: ${activity.title} on ${startDate}`,
         html: `
@@ -97,14 +85,19 @@ class EmailNotificationProvider implements NotificationProvider {
         `
       };
       
-      await sgMail.send(message);
-      console.log(`Email sent to ${preferences.email} for activity "${activity.title}"`);
-      
+      // Log the email instead of sending it (for development/testing)
+      console.log('==================== EMAIL NOTIFICATION ====================');
+      console.log(`TO: ${message.to}`);
+      console.log(`FROM: ${message.from}`);
+      console.log(`SUBJECT: ${message.subject}`);
+      console.log(`BODY: ${message.text}`);
+      console.log('===========================================================');
       
       // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
         read: true
       });
+      
       return true;
     } catch (error) {
       console.error('Error sending email notification:', error);
@@ -117,39 +110,14 @@ class EmailNotificationProvider implements NotificationProvider {
   }
 }
 
-// SMS notifications via Twilio
+// SMS notifications (simulation mode)
 class SmsNotificationProvider implements NotificationProvider {
-  private twilioClient: any;
-
-  constructor() {
-    // Initialize Twilio client if credentials are available
-    if (this.canSend()) {
-      const twilioModule = require('twilio');
-      this.twilioClient = new twilioModule(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN
-      );
-    }
-  }
-
   canSend(): boolean {
-    return !!(
-      process.env.TWILIO_ACCOUNT_SID && 
-      process.env.TWILIO_AUTH_TOKEN && 
-      process.env.TWILIO_PHONE_NUMBER
-    );
+    // Always available in simulation mode
+    return true;
   }
 
   async send(notification: Notification, activity: Activity, user: User, preferences: UserPreference): Promise<boolean> {
-    if (!this.canSend() || !this.twilioClient) {
-      // Mark as read to prevent further attempts
-      await storage.updateNotification(notification.id, {
-        read: true
-      });
-      console.error('Twilio credentials not configured');
-      return false;
-    }
-
     if (!preferences.phone) {
       // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {
@@ -160,16 +128,24 @@ class SmsNotificationProvider implements NotificationProvider {
     }
 
     try {
-      const message = `Activity Calendar: ${activity.title} at ${new Date(activity.startDate).toLocaleString()}`;
-      
-      // Send SMS via Twilio
-      const result = await this.twilioClient.messages.create({
-        body: message,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: preferences.phone
+      // Format the activity date
+      const activityDate = new Date(activity.startDate).toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
       
-      console.log(`SMS sent to ${preferences.phone}: ${message}, Twilio SID: ${result.sid}`);
+      // Create the SMS message
+      const message = `Activity Calendar: ${activity.title} (${activity.type}) on ${activityDate} - Status: ${activity.status}`;
+      
+      // Log the SMS instead of sending it (for development/testing)
+      console.log('==================== SMS NOTIFICATION ====================');
+      console.log(`TO: ${preferences.phone}`);
+      console.log(`FROM: Twilio Number (simulated)`);
+      console.log(`MESSAGE: ${message}`);
+      console.log('=========================================================');
       
       // Mark notification as read
       await storage.updateNotification(notification.id, {
