@@ -61,27 +61,45 @@ class EmailNotificationProvider implements NotificationProvider {
     }
 
     try {
+      // Import SendGrid module
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      
+      // Format dates nicely
+      const startDate = new Date(activity.startDate).toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      // Construct email content
       const message = {
         to: preferences.email,
-        from: 'notifications@activitycalendar.com', // Use a verified sender in SendGrid
+        from: process.env.SENDGRID_FROM_EMAIL || 'calendar@example.com', // Use verified sender
         subject: `Reminder: ${activity.title}`,
-        text: `You have an upcoming activity: ${activity.title}\nTime: ${activity.startDate.toLocaleString()}\nLocation: ${activity.location || 'Not specified'}`,
+        text: `Reminder for your activity: ${activity.title} on ${startDate}`,
         html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 5px;">
-            <h2 style="color: #333;">Activity Reminder</h2>
-            <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 4px;">
-              <h3 style="margin-top: 0;">${activity.title}</h3>
-              <p><strong>Time:</strong> ${activity.startDate.toLocaleString()}</p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a5568;">Activity Reminder</h2>
+            <div style="border-left: 4px solid #3182ce; padding: 10px 20px; margin: 20px 0; background-color: #ebf8ff;">
+              <h3 style="color: #2c5282; margin-bottom: 10px;">${activity.title}</h3>
+              <p><strong>When:</strong> ${startDate}</p>
+              <p><strong>Type:</strong> ${activity.type}</p>
               <p><strong>Status:</strong> ${activity.status}</p>
               ${activity.location ? `<p><strong>Location:</strong> ${activity.location}</p>` : ''}
-              ${activity.description ? `<p><strong>Description:</strong> ${activity.description}</p>` : ''}
+              ${activity.description ? `<p><strong>Description:</strong><br>${activity.description}</p>` : ''}
             </div>
-            <p style="color: #666; font-size: 12px;">This is an automated notification from your Activity Calendar.</p>
+            <p>This is an automated reminder from your Activity Calendar.</p>
           </div>
         `
       };
-
-      await sendgrid.send(message);
+      
+      await sgMail.send(message);
+      console.log(`Email sent to ${preferences.email} for activity "${activity.title}"`);
+      
       
       // Mark as read to prevent further attempts
       await storage.updateNotification(notification.id, {

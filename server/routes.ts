@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getHolidaysForYear } from "./holiday-api";
 import { z } from "zod";
-import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema, User } from "@shared/schema";
+import { insertActivitySchema, insertNotificationSchema, insertUserPreferencesSchema, InsertUserPreference, User } from "@shared/schema";
 
 // Admin authorization middleware
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
