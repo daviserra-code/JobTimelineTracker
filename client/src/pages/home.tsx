@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ViewMode, Activity, InsertActivity } from "@shared/schema";
 import { useMobile } from "@/hooks/use-mobile";
 import { useActivities } from "@/hooks/use-activities";
@@ -8,6 +8,7 @@ import { useAdminToken } from "@/hooks/use-admin-token";
 import { useToast } from "@/hooks/use-toast";
 import { YEARS } from "@/lib/constants";
 import { getISOWeekNumber } from "@/lib/dates";
+import { expandRecurringActivities } from "@/lib/recurrence";
 import { Button } from "@/components/ui/button";
 import TimelineView from "@/components/timeline-view";
 import MonthView from "@/components/month-view";
@@ -30,22 +31,22 @@ export default function Home() {
   const { user } = useAuth();
   const { hasAdminToken } = useAdminToken();
   const { toast } = useToast();
-  
+
   // Get today's date information for initial state
   const today = new Date();
-  
+
   // State for calendar controls
   // Note: We default to 2025 even though we get current date info
   // This is per requirements to have the timeline start at 2025
   const [currentYear, setCurrentYear] = useState(2025);
-  
+
   // Current month (0-indexed, January is 0)
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  
+
   // Get today's ISO week number for the initial state
   const currentISOWeek = getISOWeekNumber(today);
   const [currentWeek, setCurrentWeek] = useState(currentISOWeek); // ISO week number (1-53 for the year)
-  
+
   // Current day (1-indexed)
   const [currentDay, setCurrentDay] = useState(today.getDate()); // 1-indexed (Day of month)
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
@@ -57,17 +58,17 @@ export default function Home() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<ActivityFiltersType | null>(null);
   const [highlightToday, setHighlightToday] = useState(false);
-  
+
   // Get activities and holidays data with optional filtering
   // Include a timestamp to force refresh on mutations
   const [refreshToken, setRefreshToken] = useState(Date.now());
-  
+
   // Forced reload function that can be called from anywhere
   const forceRefresh = useCallback(() => {
     const timestamp = Date.now();
     console.log(`🔄 Forcing data refresh at ${new Date(timestamp).toISOString()}`);
     setRefreshToken(timestamp);
-    
+
     // Add a small delay and refresh again to ensure changes are reflected
     setTimeout(() => {
       const secondTimestamp = Date.now();
@@ -75,59 +76,59 @@ export default function Home() {
       setRefreshToken(secondTimestamp);
     }, 500);
   }, []);
-  
+
   // Listen for activity changes and force a refresh
   useEffect(() => {
     // This will listen for our custom event that signals activity changes
     const handleActivityChanged = (event: Event) => {
       const timestamp = Date.now();
-      
+
       // Get details from the custom event if available
       const customEvent = event as CustomEvent;
       const details = customEvent.detail || {};
       const operation = details.operation || 'unknown';
       const eventTimestamp = details.timestamp || timestamp;
       const isoTimestamp = details.isoTimestamp || new Date(timestamp).toISOString();
-      
+
       console.log(`📊 Activity ${operation} detected at ${isoTimestamp}, refreshing data with token: ${timestamp}`);
-      
+
       // Update the refresh token to force data reload
       setRefreshToken(timestamp);
-      
+
       // For delete operations, do a double refresh with a delay
       if (operation === 'delete') {
         setTimeout(() => forceRefresh(), 300);
       }
     };
-    
+
     console.log('🔄 Setting up activity-changed event listener');
     window.addEventListener('activity-changed', handleActivityChanged);
-    
+
     return () => {
       console.log('🧹 Cleaning up activity-changed event listener');
       window.removeEventListener('activity-changed', handleActivityChanged);
     };
   }, [viewMode, forceRefresh]);
-  
+
   const { activities, isLoading: activitiesLoading, isAdmin } = useActivities(
     activeFilters ? { filters: activeFilters, refreshToken } : { refreshToken }
   );
   const { holidays, isLoading: holidaysLoading } = useHolidays(["italy", "europe", "usa", "asia"], currentYear);
-  
+
   // Functions for timeline zooming
   const handleZoomIn = () => {
     if (zoomLevel < 2) setZoomLevel(zoomLevel + 0.25);
   };
-  
+
   const handleZoomOut = () => {
     if (zoomLevel > 0.5) setZoomLevel(zoomLevel - 0.25);
   };
-  
+
   // Listen for custom 'goToToday' event from header component
   useEffect(() => {
     const handleGoToToday = (e: CustomEvent) => {
       const { viewMode: todayViewMode, year, month, week, day, highlight } = e.detail;
-      
+
       // Directly update our state variables
       setViewMode(todayViewMode as ViewMode);
       setCurrentYear(year);
@@ -136,69 +137,69 @@ export default function Home() {
       setCurrentDay(day);
       setHighlightToday(highlight);
     };
-    
+
     // Add event listener as a custom event
     window.addEventListener('goToToday', handleGoToToday as EventListener);
-    
+
     // Cleanup
     return () => {
       window.removeEventListener('goToToday', handleGoToToday as EventListener);
     };
   }, []);
-  
+
   // Listen for custom 'openImportExport' event from header component
   useEffect(() => {
     const handleOpenImportExport = () => {
       setIsImportExportOpen(true);
     };
-    
+
     // Add event listener as a custom event
     window.addEventListener('openImportExport', handleOpenImportExport);
-    
+
     // Cleanup
     return () => {
       window.removeEventListener('openImportExport', handleOpenImportExport);
     };
   }, []);
-  
+
   // Effect to parse URL parameters 
   useEffect(() => {
     // Check if we have URL parameters that indicate we should navigate to today's date
     const params = new URLSearchParams(window.location.search);
-    
+
     // Parse the view parameter
     const viewParam = params.get('view');
     if (viewParam && ['timeline', 'month', 'week', 'day'].includes(viewParam)) {
       setViewMode(viewParam as ViewMode);
     }
-    
+
     // Parse year, month, week, and day parameters
     const yearParam = params.get('year');
     if (yearParam && !isNaN(Number(yearParam))) {
       setCurrentYear(Number(yearParam));
     }
-    
+
     const monthParam = params.get('month');
     if (monthParam && !isNaN(Number(monthParam))) {
       setCurrentMonth(Number(monthParam));
     }
-    
+
     const weekParam = params.get('week');
     if (weekParam && !isNaN(Number(weekParam))) {
       setCurrentWeek(Number(weekParam));
     }
-    
+
     const dayParam = params.get('day');
     if (dayParam && !isNaN(Number(dayParam))) {
       setCurrentDay(Number(dayParam));
     }
-    
+
     // Check if we should highlight today
     const todayParam = params.get('today');
     if (todayParam === 'true') {
       setHighlightToday(true);
     }
-    
+
     // Clear URL parameters after processing to avoid reprocessing on subsequent renders
     if (location.includes('?')) {
       // Use window.history to update the URL without causing a reload
@@ -209,63 +210,74 @@ export default function Home() {
   // Effect to update CSS variables based on zoom level
   useEffect(() => {
     const timelineMonths = document.querySelectorAll(".timeline-month");
-    
+
     timelineMonths.forEach((month) => {
       if (month instanceof HTMLElement) {
         // Base width is different depending on screen size
         let baseWidth = '80px'; // Default for desktop
-        
+
         if (window.innerWidth <= 640) {
           baseWidth = '240px'; // Mobile
         } else if (window.innerWidth <= 1024) {
           baseWidth = '120px'; // Tablet
         }
-        
+
         // Apply the zoom level
         month.style.minWidth = `calc(${baseWidth} * ${zoomLevel})`;
       }
     });
   }, [zoomLevel]);
-  
+
+  // Expand recurrent activities
+  // We expand for the current year plus/minus 1 year to handle year transitions smoothly
+  const expandedActivities = useMemo(() => {
+    if (activitiesLoading || !activities) return [];
+
+    const start = new Date(currentYear - 1, 0, 1);
+    const end = new Date(currentYear + 1, 11, 31);
+
+    return expandRecurringActivities(activities, start, end);
+  }, [activities, activitiesLoading, currentYear]);
+
   // Get all activities for the current year
-  const currentYearActivities = activities.filter(activity => {
+  const currentYearActivities = expandedActivities.filter(activity => {
     const startYear = new Date(activity.startDate).getFullYear();
     const endYear = new Date(activity.endDate).getFullYear();
-    return startYear === currentYear || endYear === currentYear || 
-           (startYear < currentYear && endYear > currentYear);
+    return startYear === currentYear || endYear === currentYear ||
+      (startYear < currentYear && endYear > currentYear);
   });
-  
+
   // Apply active filters to activities
   const filteredActivities = currentYearActivities;
-  
+
   const changeYear = (year: number) => {
     if (year >= YEARS[0] && year <= YEARS[YEARS.length - 1]) {
       setCurrentYear(year);
     }
   };
-  
+
   const changeMonth = (month: number) => {
     if (month >= 0 && month <= 11) {
       setCurrentMonth(month);
     }
   };
-  
+
   const changeWeek = (week: number) => {
     // ISO week numbers range from 1-53
     if (week >= 1 && week <= 53) {
       setCurrentWeek(week);
     }
   };
-  
+
   const changeDay = (day: number) => {
     // Days are 1-indexed
     setCurrentDay(day);
   };
-  
+
   const openImportExportDialog = () => {
     setIsImportExportOpen(true);
   };
-  
+
   const handleActivityClick = (activity: Activity) => {
     // For holiday activities, only admins can edit
     const isAdmin = user?.role === 'admin' || user?.username === 'Administrator' || hasAdminToken();
@@ -277,7 +289,7 @@ export default function Home() {
       });
       return;
     }
-    
+
     setSelectedActivity(activity);
     setIsEditActivityOpen(true);
   };
@@ -293,10 +305,10 @@ export default function Home() {
       });
       return;
     }
-    
+
     // Prevent the default context menu
     event.preventDefault();
-    
+
     // Set the selected activity for deletion
     setSelectedActivity(activity);
     setIsDeleteDialogOpen(true);
@@ -322,7 +334,7 @@ export default function Home() {
             onOpenImportExport={openImportExportDialog}
           />
         </div>
-        
+
         <div className="mt-4 mb-6 tour-filters">
           <ActivityFilters
             onFilterChange={(filters) => {
@@ -331,11 +343,11 @@ export default function Home() {
             }}
           />
         </div>
-        
+
         <div className="tour-legend">
           <ActivityLegend />
         </div>
-        
+
         {viewMode === "timeline" && (
           <div className="tour-timeline">
             <TimelineView
@@ -351,7 +363,7 @@ export default function Home() {
             />
           </div>
         )}
-        
+
         {viewMode === "month" && (
           <MonthView
             activities={activitiesLoading ? [] : currentYearActivities}
@@ -363,7 +375,7 @@ export default function Home() {
             onActivityContextMenu={handleActivityContextMenu}
           />
         )}
-        
+
         {viewMode === "week" && (
           <WeekView
             activities={activitiesLoading ? [] : currentYearActivities}
@@ -376,7 +388,7 @@ export default function Home() {
             onActivityContextMenu={handleActivityContextMenu}
           />
         )}
-        
+
         {viewMode === "day" && (
           <DayView
             activities={activitiesLoading ? [] : currentYearActivities}
@@ -389,23 +401,23 @@ export default function Home() {
             onActivityContextMenu={handleActivityContextMenu}
           />
         )}
-        
+
         <div className="tour-notifications">
           <NotificationsPanel />
         </div>
-        
+
         <ImportExportDialog
           open={isImportExportOpen}
           onOpenChange={setIsImportExportOpen}
           activities={activities}
         />
-        
+
         <ActivityForm
           open={isAddActivityOpen}
           onOpenChange={setIsAddActivityOpen}
           actionType="create"
         />
-        
+
         {selectedActivity && (
           <>
             <ActivityForm
@@ -419,8 +431,8 @@ export default function Home() {
               initialData={selectedActivity}
               actionType="edit"
             />
-            
-            <DeleteActivityDialog 
+
+            <DeleteActivityDialog
               activity={selectedActivity}
               open={isDeleteDialogOpen}
               onOpenChange={(open) => {
@@ -433,11 +445,11 @@ export default function Home() {
           </>
         )}
       </main>
-      
+
       {/* Mobile Navigation */}
-      <MobileNav 
-        currentViewMode={viewMode} 
-        onViewModeChange={setViewMode} 
+      <MobileNav
+        currentViewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
     </>
   );

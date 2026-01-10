@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
+import { runMigrations } from "./migrate";
 import cors from 'cors';
 
 const app = express();
@@ -57,6 +58,9 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Run migrations first
+    await runMigrations();
+
     // Initialize database with sample data (if needed)
     await storage.initializeDatabase();
     log("Database initialized successfully");

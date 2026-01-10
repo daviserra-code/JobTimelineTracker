@@ -10,7 +10,11 @@ import {
   User,
   InsertUser,
   UserPreference,
-  InsertUserPreference
+  InsertUserPreference,
+  Attendee,
+  InsertAttendee,
+  attendees,
+  insertAttendeeSchema
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -19,21 +23,22 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User>;
-  
+
   // User Preferences methods
   getUserPreferences(userId: number): Promise<UserPreference | undefined>;
   createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference>;
   updateUserPreferences(userId: number, preferences: Partial<UserPreference>): Promise<UserPreference>;
-  
+
   // Activity methods
   getAllActivities(): Promise<Activity[]>;
   getActivity(id: number): Promise<Activity | undefined>;
   createActivity(activity: InsertActivity): Promise<Activity>;
   updateActivity(id: number, activity: Partial<Activity>): Promise<Activity>;
   deleteActivity(id: number): Promise<void>;
-  
+
   // Notification methods
   getAllNotifications(): Promise<Notification[]>;
   getNotification(id: number): Promise<Notification | undefined>;
@@ -43,9 +48,17 @@ export interface IStorage {
   getPendingNotifications(): Promise<Notification[]>;
   getNotificationsForUser(userId: number, read?: boolean): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification>;
-  
+
+  // Database initialization
   // Database initialization
   initializeDatabase(): Promise<void>;
+
+  // Attendee methods
+  getAllAttendees(): Promise<Attendee[]>;
+  getAttendees(activityId: number): Promise<Attendee[]>;
+  addAttendee(attendee: InsertAttendee): Promise<Attendee>;
+  removeAttendee(activityId: number, userId: number): Promise<void>;
+  updateAttendeeStatus(activityId: number, userId: number, status: string): Promise<Attendee>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -60,117 +73,121 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0 ? result[0] : undefined;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const result = await db.insert(users).values(insertUser).returning();
     return result[0];
   }
-  
+
   async updateUser(id: number, userData: Partial<User>): Promise<User> {
     const existingUser = await this.getUser(id);
-    
+
     if (!existingUser) {
       throw new Error(`User with ID ${id} not found`);
     }
-    
+
     const result = await db.update(users)
       .set(userData)
       .where(eq(users.id, id))
       .returning();
-    
+
     return result[0];
   }
-  
+
   // User Preferences methods
   async getUserPreferences(userId: number): Promise<UserPreference | undefined> {
     const result = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
     return result.length > 0 ? result[0] : undefined;
   }
-  
+
   async createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference> {
     const result = await db.insert(userPreferences).values(preferences).returning();
     return result[0];
   }
-  
+
   async updateUserPreferences(userId: number, preferencesData: Partial<UserPreference>): Promise<UserPreference> {
     // Find user preferences by userId
     const existingPreferences = await this.getUserPreferences(userId);
-    
+
     if (!existingPreferences) {
       // If no preferences exist for this user, create them
-      return this.createUserPreferences({ 
-        userId, 
+      return this.createUserPreferences({
+        userId,
         ...preferencesData
       } as InsertUserPreference);
     }
-    
+
     // Update the existing preferences
     const result = await db.update(userPreferences)
       .set({ ...preferencesData, updatedAt: new Date() })
       .where(eq(userPreferences.id, existingPreferences.id))
       .returning();
-    
+
     return result[0];
   }
-  
+
   // Activity methods
   async getAllActivities(): Promise<Activity[]> {
     return db.select().from(activities);
   }
-  
+
   async getActivity(id: number): Promise<Activity | undefined> {
     const result = await db.select().from(activities).where(eq(activities.id, id));
     return result.length > 0 ? result[0] : undefined;
   }
-  
+
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     const result = await db.insert(activities).values(insertActivity).returning();
     return result[0];
   }
-  
+
   async updateActivity(id: number, activityData: Partial<Activity>): Promise<Activity> {
     const existingActivity = await this.getActivity(id);
-    
+
     if (!existingActivity) {
       throw new Error(`Activity with ID ${id} not found`);
     }
-    
+
     const result = await db.update(activities)
       .set(activityData)
       .where(eq(activities.id, id))
       .returning();
-    
+
     return result[0];
   }
-  
+
   async deleteActivity(id: number): Promise<void> {
     const deleteResult = await db.delete(activities)
       .where(eq(activities.id, id))
       .returning({ deletedId: activities.id });
-    
+
     if (deleteResult.length === 0) {
       throw new Error(`Activity with ID ${id} not found`);
     }
-    
+
     // Also delete related notifications
     await db.delete(notifications)
       .where(eq(notifications.activityId, id));
   }
-  
+
   // Notification methods
   async getAllNotifications(): Promise<Notification[]> {
     return db.select().from(notifications);
   }
-  
+
   async getNotification(id: number): Promise<Notification | undefined> {
     const result = await db.select().from(notifications).where(eq(notifications.id, id));
     return result.length > 0 ? result[0] : undefined;
   }
-  
+
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
     try {
       // Ensure we only insert fields that exist in the actual database table
       const { method, status, errorMessage, createdAt, sentAt, ...validFields } = insertNotification as any;
-      
+
       // Insert only the valid fields that exist in the table
       const result = await db.insert(notifications).values(validFields).returning();
       return result[0];
@@ -186,27 +203,27 @@ export class DatabaseStorage implements IStorage {
       } as Notification;
     }
   }
-  
+
   async updateNotification(id: number, notificationData: Partial<Notification>): Promise<Notification> {
     try {
       const existingNotification = await this.getNotification(id);
-      
+
       if (!existingNotification) {
         throw new Error(`Notification with ID ${id} not found`);
       }
-      
+
       // Filter out fields that don't exist in the database
       const { method, status, errorMessage, sentAt, createdAt, ...validFields } = notificationData as any;
-      
+
       const result = await db.update(notifications)
         .set(validFields)
         .where(eq(notifications.id, id))
         .returning();
-      
+
       return result[0];
     } catch (error) {
       console.error("Error updating notification:", error);
-      
+
       // If this is a mock sentinel notification (id = -1), return it as is
       if (id === -1) {
         return {
@@ -217,7 +234,7 @@ export class DatabaseStorage implements IStorage {
           userId: notificationData.userId || 0,
         } as Notification;
       }
-      
+
       // Otherwise try to get the existing notification, or return a fallback
       try {
         const existingNotification = await this.getNotification(id);
@@ -240,13 +257,13 @@ export class DatabaseStorage implements IStorage {
       }
     }
   }
-  
+
   async deleteNotification(id: number): Promise<void> {
     try {
       const deleteResult = await db.delete(notifications)
         .where(eq(notifications.id, id))
         .returning({ deletedId: notifications.id });
-      
+
       if (deleteResult.length === 0) {
         console.log(`Notification with ID ${id} not found, but continuing anyway`);
       }
@@ -255,17 +272,17 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error deleting notification with ID ${id}:`, error);
     }
   }
-  
+
   async getPendingNotifications(): Promise<Notification[]> {
     try {
       const now = new Date();
-      
+
       // Since we don't have status field in the database, we'll consider all
       // unread notifications with notifyDate in the past as pending
       const allNotifications = await db.select().from(notifications);
       return allNotifications.filter(
-        notification => 
-          !notification.read && 
+        notification =>
+          !notification.read &&
           notification.notifyDate <= now
       );
     } catch (error) {
@@ -273,25 +290,25 @@ export class DatabaseStorage implements IStorage {
       return []; // Return empty array on error instead of failing
     }
   }
-  
+
   async getNotificationsForUser(userId: number, read?: boolean): Promise<Notification[]> {
     try {
       // Use a simpler query and filter in memory
       const allUserNotifications = await db.select()
         .from(notifications)
         .where(eq(notifications.userId, userId));
-        
+
       if (read !== undefined) {
         return allUserNotifications.filter(notification => notification.read === read);
       }
-      
+
       return allUserNotifications;
     } catch (error) {
       console.error("Error getting notifications for user:", error);
       return []; // Return empty array on error instead of failing
     }
   }
-  
+
   async markNotificationAsRead(id: number): Promise<Notification> {
     try {
       return await this.updateNotification(id, { read: true });
@@ -307,28 +324,60 @@ export class DatabaseStorage implements IStorage {
       } as Notification;
     }
   }
-  
+
+  // Attendee methods
+  async getAllAttendees(): Promise<Attendee[]> {
+    return db.select().from(attendees);
+  }
+
+  async getAttendees(activityId: number): Promise<Attendee[]> {
+    return db.select().from(attendees).where(eq(attendees.activityId, activityId));
+  }
+
+  async addAttendee(attendee: InsertAttendee): Promise<Attendee> {
+    const result = await db.insert(attendees).values(attendee).returning();
+    return result[0];
+  }
+
+  async removeAttendee(activityId: number, userId: number): Promise<void> {
+    await db.delete(attendees)
+      .where(and(eq(attendees.activityId, activityId), eq(attendees.userId, userId)));
+  }
+
+  async updateAttendeeStatus(activityId: number, userId: number, status: string): Promise<Attendee> {
+    const result = await db.update(attendees)
+      .set({ status })
+      .where(and(eq(attendees.activityId, activityId), eq(attendees.userId, userId)))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error(`Attendee not found for activity ${activityId} and user ${userId}`);
+    }
+
+    return result[0];
+  }
+
   // Database initialization with sample data
   async initializeDatabase(): Promise<void> {
     try {
       // Check if we already have a demo user
       const existingUser = await this.getUserByUsername("demo");
       const existingAdminUser = await this.getUserByUsername("Administrator");
-      
+
       if (existingUser && existingAdminUser) {
         console.log("Database already initialized with sample data");
         return;
       }
-      
+
       console.log("Initializing database with sample data...");
-      
+
       // Create a sample user
       const user = await this.createUser({
         username: "demo",
         password: "demo123",
         role: "admin", // Admin role by default
       });
-      
+
       // Create the Administrator user
       if (!existingAdminUser) {
         await this.createUser({
@@ -337,7 +386,7 @@ export class DatabaseStorage implements IStorage {
           role: "admin", // Admin role
         });
       }
-      
+
       // Create default user preferences
       const defaultPreferences = await this.createUserPreferences({
         userId: user.id,
@@ -354,7 +403,7 @@ export class DatabaseStorage implements IStorage {
           }
         },
       });
-      
+
       // Create sample activities
       const sampleActivities = [
         {
@@ -553,16 +602,16 @@ export class DatabaseStorage implements IStorage {
           userId: user.id,
         },
       ];
-      
+
       // Add sample activities to the database and create notifications for each
       for (const activityData of sampleActivities) {
         const activity = await this.createActivity(activityData);
-        
+
         // Create a notification for the activity
         const startDate = new Date(activity.startDate);
         const notifyDate = new Date(startDate);
         notifyDate.setDate(startDate.getDate() - 5);
-        
+
         await this.createNotification({
           activityId: activity.id,
           notifyDate,
@@ -573,7 +622,7 @@ export class DatabaseStorage implements IStorage {
           // status: 'pending',
         });
       }
-      
+
       console.log("Database initialized with sample data");
     } catch (error) {
       console.error("Error initializing database:", error);

@@ -48,6 +48,22 @@ export const activities = pgTable("activities", {
   region: text("region"), // region associated with the activity (for holidays)
   notificationEnabled: boolean("notification_enabled").default(true),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  // Recurrence fields
+  recurrenceRule: text("recurrence_rule"), // RRule string
+  parentActivityId: integer("parent_activity_id"), // Reference to parent for recurring instances
+});
+
+export const attendees = pgTable("attendees", {
+  id: serial("id").primaryKey(),
+  activityId: integer("activity_id").notNull().references(() => activities.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("pending"), // pending, confirmed, declined
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAttendeeSchema = createInsertSchema(attendees).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Create and refine the insert schema to handle string dates properly
@@ -108,8 +124,12 @@ export type InsertUserPreference = z.infer<typeof insertUserPreferencesSchema>;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
+
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type Attendee = typeof attendees.$inferSelect;
+export type InsertAttendee = z.infer<typeof insertAttendeeSchema>;
 
 // Custom types for the application
 export type ActivityType = "project" | "meeting" | "training" | "holiday";

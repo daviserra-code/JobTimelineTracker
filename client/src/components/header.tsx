@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings, LogIn, LogOut } from "lucide-react";
+import { CalendarDays, Bell, Download, User, Menu, HelpCircle, Settings, LogIn, LogOut, LayoutDashboard } from "lucide-react";
 import HelpMenu from "@/components/help-menu";
 import UserPreferencesDialog from "@/components/user-preferences-dialog";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,7 +16,7 @@ export default function Header() {
   const [location, setLocation] = useLocation();
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
-  
+
   // Logout mutation
   const { mutate: logout, isPending: isLoggingOut } = useMutation({
     mutationFn: async () => {
@@ -40,11 +40,11 @@ export default function Header() {
       });
     },
   });
-  
+
   const toggleDrawer = () => {
     setIsDrawerOpen(!isDrawerOpen);
   };
-  
+
   return (
     <>
       <header className="bg-primary text-white shadow-md z-10">
@@ -57,13 +57,23 @@ export default function Header() {
               <h1 className="text-xl font-medium">Activity Calendar of Davide Serra</h1>
             </div>
             <div className="hidden md:flex items-center space-x-2">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
+                className="text-white hover:bg-[rgba(255,255,255,0.1)]"
+                asChild
+              >
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
                 className="text-white hover:bg-[rgba(255,255,255,0.1)]"
                 onClick={() => {
                   // Get today's information
                   const today = getTodayInfo();
-                  
+
                   // First, let's directly update the state in our component
                   // This is the key part - we need to set the view mode directly
                   // in addition to using URL parameters
@@ -77,7 +87,7 @@ export default function Header() {
                       highlight: true
                     }
                   }));
-                  
+
                   // Use URLSearchParams to create the query string for navigation
                   const params = new URLSearchParams();
                   params.set('view', 'week');
@@ -86,7 +96,7 @@ export default function Header() {
                   params.set('week', today.week.toString());
                   params.set('day', today.day.toString());
                   params.set('today', 'true'); // Flag to indicate we want to highlight today
-                  
+
                   // Navigate to home with query parameters
                   setLocation(`/?${params.toString()}`);
                 }}
@@ -98,8 +108,8 @@ export default function Header() {
                 <Bell className="mr-2 h-4 w-4" />
                 <span>Notifications</span>
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="text-white hover:bg-[rgba(255,255,255,0.1)]"
                 onClick={() => {
                   // Dispatch a custom event to trigger the import/export dialog
@@ -111,8 +121,8 @@ export default function Header() {
                 <span>Import/Export</span>
               </Button>
               {isAdmin && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="text-white hover:bg-[rgba(255,255,255,0.1)]"
                   asChild
                 >
@@ -122,23 +132,23 @@ export default function Header() {
                   </Link>
                 </Button>
               )}
-              
-              <Button 
-                variant="ghost" 
+
+              <Button
+                variant="ghost"
                 className="text-white hover:bg-[rgba(255,255,255,0.1)]"
                 onClick={() => setIsPreferencesDialogOpen(true)}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Preferences</span>
               </Button>
-              
+
               <div className="ml-2 text-white">
                 <HelpMenu />
               </div>
-              
+
               {isAdmin ? (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="text-white hover:bg-[rgba(255,255,255,0.1)]"
                   onClick={() => logout()}
                   disabled={isLoggingOut}
@@ -147,8 +157,8 @@ export default function Header() {
                   <span>Logout</span>
                 </Button>
               ) : (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="text-white hover:bg-[rgba(255,255,255,0.1)]"
                   asChild
                 >
@@ -162,20 +172,20 @@ export default function Header() {
           </div>
         </div>
       </header>
-      
+
       {/* User Preferences Dialog */}
-      <UserPreferencesDialog 
-        open={isPreferencesDialogOpen} 
-        onOpenChange={setIsPreferencesDialogOpen} 
+      <UserPreferencesDialog
+        open={isPreferencesDialogOpen}
+        onOpenChange={setIsPreferencesDialogOpen}
       />
-      
+
       {/* Mobile Drawer */}
       {isDrawerOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20"
           onClick={() => setIsDrawerOpen(false)}
         >
-          <div 
+          <div
             className="bg-white dark:bg-slate-800 h-full w-64 shadow-lg transform transition-transform duration-300"
             onClick={(e) => e.stopPropagation()}
           >
@@ -185,15 +195,15 @@ export default function Header() {
             <nav className="p-4">
               <ul className="space-y-2">
                 <li>
-                  <button 
+                  <button
                     className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                     onClick={() => {
                       // Close the drawer
                       setIsDrawerOpen(false);
-                      
+
                       // Get today's information
                       const today = getTodayInfo();
-                      
+
                       // First, let's directly update the state in our component
                       window.dispatchEvent(new CustomEvent('goToToday', {
                         detail: {
@@ -205,7 +215,7 @@ export default function Header() {
                           highlight: true
                         }
                       }));
-                      
+
                       // Use URLSearchParams to create the query string for navigation
                       const params = new URLSearchParams();
                       params.set('view', 'week');
@@ -214,7 +224,7 @@ export default function Header() {
                       params.set('week', today.week.toString());
                       params.set('day', today.day.toString());
                       params.set('today', 'true'); // Flag to indicate we want to highlight today
-                      
+
                       // Navigate to home with query parameters
                       setLocation(`/?${params.toString()}`);
                     }}
@@ -230,7 +240,7 @@ export default function Header() {
                   </button>
                 </li>
                 <li>
-                  <button 
+                  <button
                     className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                     onClick={() => {
                       setIsDrawerOpen(false);
@@ -253,7 +263,7 @@ export default function Header() {
                   </li>
                 )}
                 <li>
-                  <button 
+                  <button
                     className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                     onClick={() => {
                       setIsDrawerOpen(false);
@@ -270,10 +280,10 @@ export default function Header() {
                     <span>Help & Support</span>
                   </button>
                 </li>
-                
+
                 <li className="mt-4">
                   {isAdmin ? (
-                    <button 
+                    <button
                       className="flex items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left dark:text-white"
                       onClick={() => {
                         setIsDrawerOpen(false);

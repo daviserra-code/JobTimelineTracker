@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5005:5000"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/job_scheduler
+      - NODE_ENV=production
+      - SESSION_SECRET=dev_secret_replace_in_prod
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: job_scheduler
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

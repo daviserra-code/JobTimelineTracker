@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 
 import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import AccountPage from "@/pages/account";
 import LoginPage from "@/pages/login";
@@ -42,7 +43,7 @@ function Router() {
         keyboardShortcutsBtn.click();
       }
     }
-    
+
     // Navigation shortcuts
     if (e.key === "t" || e.key === "T") {
       // Toggle between view modes
@@ -51,7 +52,7 @@ function Router() {
         viewModeSelector.click();
       }
     }
-    
+
     if (e.key === "m" || e.key === "M") {
       // Go to month view
       const monthViewBtn = document.querySelector('[data-month-view="true"]') as HTMLButtonElement;
@@ -59,7 +60,7 @@ function Router() {
         monthViewBtn.click();
       }
     }
-    
+
     if (e.key === "y" || e.key === "Y") {
       // Go to timeline/year view
       const timelineViewBtn = document.querySelector('[data-timeline-view="true"]') as HTMLButtonElement;
@@ -67,7 +68,7 @@ function Router() {
         timelineViewBtn.click();
       }
     }
-    
+
     // Actions shortcuts
     if (e.key === "n" || e.key === "N") {
       // Create new activity
@@ -76,7 +77,7 @@ function Router() {
         newActivityBtn.click();
       }
     }
-    
+
     // Zoom controls
     if (e.key === "+" || e.key === "=") {
       // Zoom in timeline
@@ -85,7 +86,7 @@ function Router() {
         zoomInBtn.click();
       }
     }
-    
+
     if (e.key === "-" || e.key === "_") {
       // Zoom out timeline
       const zoomOutBtn = document.querySelector('[data-zoom-out="true"]') as HTMLButtonElement;
@@ -93,7 +94,7 @@ function Router() {
         zoomOutBtn.click();
       }
     }
-    
+
     // Filters
     if (e.key === "f" || e.key === "F") {
       // Toggle filters panel
@@ -102,7 +103,7 @@ function Router() {
         filtersBtn.click();
       }
     }
-    
+
     // Search
     if (e.key === "s" || e.key === "S") {
       // Focus search bar
@@ -112,7 +113,7 @@ function Router() {
         e.preventDefault(); // Prevent 's' from being entered
       }
     }
-    
+
     // Navigation between periods
     if (e.key === "ArrowLeft") {
       // Previous period
@@ -121,7 +122,7 @@ function Router() {
         prevBtn.click();
       }
     }
-    
+
     if (e.key === "ArrowRight") {
       // Next period
       const nextBtn = document.querySelector('[data-next-period="true"]') as HTMLButtonElement;
@@ -129,7 +130,7 @@ function Router() {
         nextBtn.click();
       }
     }
-    
+
     if (e.key === "Home") {
       // Go to current period (today)
       const todayBtn = document.querySelector('[data-today="true"]') as HTMLButtonElement;
@@ -152,6 +153,7 @@ function Router() {
       <div className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
+          <Route path="/dashboard" component={Dashboard} />
           <ProtectedAdminRoute path="/account" component={AccountPage} />
           <Route path="/login" component={LoginPage} />
           <Route component={NotFound} />
@@ -161,7 +163,7 @@ function Router() {
       <div className="fixed bottom-4 left-4 z-50 hidden md:block">
         <KeyboardShortcuts />
       </div>
-      
+
       {/* Direct admin login button - for emergency access */}
       <AdminLoginButton />
     </div>
