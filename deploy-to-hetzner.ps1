@@ -30,21 +30,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Step 4: Deploy to server
 Write-Host "`nDeploying to Hetzner server..." -ForegroundColor Yellow
-$deployCommands = @"
-if [ ! -d "$PROJECT_PATH" ]; then
-    echo "First time deployment: Cloning repository..."
-    cd /opt
-    git clone https://github.com/daviserra-code/JobTimelineTracker.git JobTimelineTracker
-    cd $PROJECT_PATH
-else
-    echo "Updating existing deployment..."
-    cd $PROJECT_PATH
-    git pull origin main
-fi
-
-chmod +x deploy.sh
-./deploy.sh
-"@
+$deployCommands = "if [ ! -d ""$PROJECT_PATH"" ]; then echo 'First time: Cloning...'; cd /opt; git clone https://github.com/daviserra-code/JobTimelineTracker.git JobTimelineTracker; cd ""$PROJECT_PATH""; else echo 'Updating...'; cd ""$PROJECT_PATH""; git pull origin main; fi; chmod +x deploy.sh; ./deploy.sh"
 
 ssh "${SERVER_USER}@${SERVER_IP}" $deployCommands
 
