@@ -151,7 +151,7 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen tour-home">
       <Header />
-      <div className="flex-grow">
+      <div className="flex-grow pb-20 md:pb-0">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/dashboard" component={Dashboard} />
