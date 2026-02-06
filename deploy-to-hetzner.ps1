@@ -36,7 +36,7 @@ ssh "${SERVER_USER}@${SERVER_IP}" $deployCommands
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`nDeployment completed successfully!" -ForegroundColor Green
-    Write-Host "Application available at: http://${SERVER_IP}:8000" -ForegroundColor Cyan
+    Write-Host "Application available at: http://${SERVER_IP}:5005" -ForegroundColor Cyan
 }
 else {
     Write-Host "`nDeployment failed!" -ForegroundColor Red

@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import AccountPage from "@/pages/account";
 import LoginPage from "@/pages/login";
+import KnowledgeGraph from "@/pages/knowledge-graph";
 import Header from "@/components/header";
 import MobileNav from "@/components/mobile-nav";
 import { OnboardingTour } from "@/components/onboarding-tour";
@@ -156,6 +157,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <ProtectedAdminRoute path="/account" component={AccountPage} />
           <Route path="/login" component={LoginPage} />
+          <ProtectedAdminRoute path="/knowledge-graph" component={KnowledgeGraph} />
           <Route component={NotFound} />
         </Switch>
       </div>
